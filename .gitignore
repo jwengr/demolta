@@ -1,0 +1,60 @@
+# Compiled Python files
+__pycache__/
+*.py[cod]
+
+# Logs and checkpoints
+logs/
+checkpoints/
+lightning_logs/
+
+# Virtual environment
+venv/
+env/
+*.env
+
+# Jupyter Notebook files
+.ipynb_checkpoints/
+
+
+# Data files
+data/
+*.csv
+*.txt
+*.h5
+*.json
+preproc/
+
+# Model weights and artifacts
+model_weights/
+*.pth
+*.h5
+*.ckpt
+
+# IDE and editor-specific files
+.idea/
+.vscode/
+*.pydevproject
+*.project
+
+# Temporary files
+*.bak
+*.swp
+*~
+
+# Compiled files
+dist/
+build/
+*.egg-info/
+
+# Mac OS specific files
+.DS_Store
+
+# Compiled CUDA extensions
+build/
+*.so
+
+# Miscellaneous
+*.log
+
+# test
+test*
