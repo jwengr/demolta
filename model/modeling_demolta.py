@@ -29,7 +29,6 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 
-
 class DeMOLTaConfig:
     def __init__(
             self,
@@ -558,6 +557,19 @@ class MOLLACollateFn:
             'labels': label_ids,
         }
         return batch
+    
+class FineTuneCollateFn:
+    def __init__(self):
+        self.mol_collate_fn = DeMOLTaCollateFn()
+
+    def __call__(self, samples):
+        mols = self.mol_collate_fn([sample['mol_feats'] for sample in samples])
+        labels = torch.FloatTensor([sample['label'] for sample in samples])
+        batch = {
+            'mols': mols,
+            'labels': labels,
+        }
+        return batch
 
 class MOLLA(nn.Module):
     def __init__(self, mol_config, text_model_name):
@@ -641,20 +653,21 @@ def param_to_buffer(module):
     for module in modules:
         param_to_buffer(module)
 
-class MOLAForMolculeClassification(nn.Module):
+
+class MOLAForMolculeRegression(nn.Module):
     def __init__(self, mol_config, text_model_name, n_class):
-        super(MOLAForMolculeClassification, self).__init__()
+        super(MOLAForMolculeRegression, self).__init__()
         self.mol_model = DeMOLTaModel(mol_config)
         self.language_model_config = AutoConfig.from_pretrained(text_model_name)
         self.language_projection = nn.Linear(mol_config.hidden_dim, self.language_model_config.hidden_size)
-        self.classifier = nn.LazyLinear(n_class)
+        self.regressor = nn.LazyLinear(n_class)
 
     def forward(self, atom_feats, bond_feats, attention_matrix_mask, labels=None):
         atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
         mol_embeds = atom_outputs.mean(dim=1)
         mol_embeds = self.language_projection(mol_embeds)
         mol_embeds = F.gelu(mol_embeds)
-        logits = self.classifier(mol_embeds)
+        logits = self.regressor(mol_embeds)
         loss1, loss2 = None, None
         if labels is not None:
             loss1 = F.mse_loss(logits[:,0], labels[:,0])
