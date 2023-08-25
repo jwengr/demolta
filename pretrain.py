@@ -4,10 +4,9 @@ import torch
 import lightning as L
 
 from torch.utils.data import DataLoader
-from lightning.pytorch.callbacks import ModelCheckpoint
 
 from model.modeling_demolta import DeMOLTaConfig
-from trainer import LitMOLA, get_mola_dataloader
+from trainer import LitMOLA, get_mola_dataloader, SaveTrainableParamsCheckpoint
 
 
 torch.set_float32_matmul_precision('medium')
@@ -45,7 +44,7 @@ def main(
         demolta_config=demolta_config,
         text_model_name=text_model_name,
     )
-    checkpoint_callback = ModelCheckpoint(
+    checkpoint_callback = SaveTrainableParamsCheckpoint(
         monitor='val_loss',
         dirpath='./checkpoint/',
         filename='mola-pretrain' + f'-{demolta_size}-{text_model_name.split("/")[-1]}' + '-{step}-{val_loss:.2f}',
