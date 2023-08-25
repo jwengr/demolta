@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 from typing import Any
 from copy import deepcopy
-from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer, AutoConfig
 from dgllife.utils import (
     atom_type_one_hot, 
     atom_formal_charge_one_hot, 
@@ -639,3 +639,24 @@ def param_to_buffer(module):
         module.register_buffer(name, param)
     for module in modules:
         param_to_buffer(module)
+
+class MOLAForMolculeClassification(nn.Module):
+    def __init__(self, mol_config, text_model_name, n_class):
+        super(MOLAForMolculeClassification, self).__init__()
+        self.mol_model = DeMOLTaModel(mol_config)
+        self.language_model_config = AutoConfig.from_pretrained(text_model_name)
+        self.language_projection = nn.Linear(mol_config.hidden_dim, self.language_model_config.hidden_size)
+        self.classifier = nn.LazyLinear(n_class)
+
+    def forward(self, atom_feats, bond_feats, attention_matrix_mask, labels=None):
+        atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
+        mol_embeds = atom_outputs.mean(dim=1)
+        mol_embeds = self.language_projection(mol_embeds)
+        mol_embeds = F.gelu(mol_embeds)
+        logits = self.classifier(mol_embeds)
+        loss1, loss2 = None, None
+        if labels is not None:
+            loss1 = F.mse_loss(logits[:,0], labels[:,0])
+            loss2 = F.mse_loss(logits[:,1], labels[:,1])
+        loss = (loss1, loss2)
+        return loss, logits
