@@ -52,7 +52,7 @@ def main(
     )
     trainer = L.Trainer(
         accelerator='gpu',
-        precision='16-mixed',
+        precision='bf16',
         max_steps=max_step,
         callbacks=[checkpoint_callback],
         gradient_clip_val=1.0,
