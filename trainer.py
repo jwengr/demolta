@@ -19,7 +19,6 @@ class SaveTrainableParamsCheckpoint(ModelCheckpoint):
 
     def _save_checkpoint(self, trainer, filepath):
         model = trainer.lightning_module
-        optimizer = trainer.optimizers[0]
 
         # Filter and save trainable parameters
         trainable_state_dict = {name: param for name, param in model.named_parameters() if param.requires_grad}
