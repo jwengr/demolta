@@ -596,7 +596,8 @@ class MOLLA(nn.Module):
         return loss, logits
         
     def freeze_language_model(self):
-        param_to_buffer(self.language_model)
+        for param in self.language_model.parameters():
+            param.requires_grad = False
 
     @torch.no_grad()
     def generate(self, input_ids, input_attention_mask, atom_feats, bond_feats, attention_matrix_mask, **generate_kwargs):

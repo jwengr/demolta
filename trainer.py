@@ -5,9 +5,33 @@ import lightning as L
 
 from torch.utils.data import IterableDataset, DataLoader
 from transformers import AutoTokenizer, LlamaTokenizer
+from lightning.pytorch.callbacks import ModelCheckpoint
 
 from model.modeling_demolta import MOLLA, DeMOLTaFeaturizer, MOLLACollateFn
 from optim import Lion
+
+from weakref import proxy
+
+class SaveTrainableParamsCheckpoint(ModelCheckpoint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+
+    def _save_checkpoint(self, trainer, filepath):
+        model = trainer.lightning_module
+        optimizer = trainer.optimizers[0]
+
+        # Filter and save trainable parameters
+        trainable_state_dict = {name: param for name, param in model.named_parameters() if param.requires_grad}
+
+        torch.save(trainable_state_dict, filepath)
+
+        self._last_global_step_saved = trainer.global_step
+
+        # notify loggers
+        if trainer.is_global_zero:
+            for logger in trainer.loggers:
+                logger.after_save_checkpoint(proxy(self))
 
 class MOLADataset(IterableDataset):
     def __init__(self, df_path, ignore_smiles = []):
