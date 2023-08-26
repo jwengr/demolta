@@ -159,7 +159,7 @@ class LitMOLAForRegression(L.LightningModule):
             labels=labels
         )
         loss, logits = outputs
-        loss = (loss[0]**0.5 + loss[1]**0.5)/2
+        loss = sum(loss)
         self.log("train_loss", loss, on_step=True, on_epoch=False, prog_bar=True, logger=True)
         return loss
 
@@ -181,15 +181,14 @@ class LitMOLAForRegression(L.LightningModule):
     def on_validation_epoch_end(self):
         loss = torch.Tensor(self.validation_step_outputs)
         loss1, loss2 = loss[:, 0], loss[:, 1]
-        loss = loss1**0.5 + loss2**0.5
-        loss = loss.mean()
+        loss = ((loss1.sum())**0.5 + (loss2.sum())**0.5)/2
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.validation_step_outputs.clear()
 
     def configure_optimizers(self):
         return Lion(self.parameters())
         
-def scaffold_split(df, smiles, fraction=0.2, seed=42, k_fold=5, spplitter='scaffold'):
+def smiles_split(df, smiles, fraction=0.2, seed=42, k_fold=5, spplitter='scaffold'):
     Xs, ys = np.arange(len(smiles)), np.ones(len(smiles))
     dataset = dc.data.DiskDataset.from_numpy(X=Xs,y=ys,w=np.zeros(len(smiles)),ids=smiles)
     if spplitter == 'random':
