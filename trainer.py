@@ -185,8 +185,10 @@ class LitMOLAForRegression(L.LightningModule):
         loss = loss.mean()
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.validation_step_outputs = []
-        
 
+    def configure_optimizers(self):
+        return Lion(self.parameters())
+        
 def scaffold_split(df, smiles, fraction=0.2, seed=42, k_fold=5, spplitter='scaffold'):
     Xs, ys = np.arange(len(smiles)), np.ones(len(smiles))
     dataset = dc.data.DiskDataset.from_numpy(X=Xs,y=ys,w=np.zeros(len(smiles)),ids=smiles)
