@@ -178,13 +178,13 @@ class LitMOLAForRegression(L.LightningModule):
         self.validation_step_outputs.append(loss)
         return loss
     
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self, outputs):
         loss = torch.Tensor(outputs)
         loss1, loss2 = loss[:, 0], loss[:, 1]
         loss = loss1**0.5 + loss2**0.5
         loss = loss.mean()
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        self.validation_step_outputs = []
+        self.validation_step_outputs.clear()
 
     def configure_optimizers(self):
         return Lion(self.parameters())
