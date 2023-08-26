@@ -178,8 +178,8 @@ class LitMOLAForRegression(L.LightningModule):
         self.validation_step_outputs.append(loss)
         return loss
     
-    def on_validation_epoch_end(self, outputs):
-        loss = torch.Tensor(outputs)
+    def on_validation_epoch_end(self):
+        loss = torch.Tensor(self.validation_step_outputs)
         loss1, loss2 = loss[:, 0], loss[:, 1]
         loss = loss1**0.5 + loss2**0.5
         loss = loss.mean()
