@@ -159,7 +159,8 @@ class LitMOLAForRegression(L.LightningModule):
             labels=labels
         )
         loss, logits = outputs
-        loss = sum(loss)
+        loss1, loss2 = loss
+        loss = (loss1**0.5 + loss2**0.5)/2
         self.log("train_loss", loss, on_step=True, on_epoch=False, prog_bar=True, logger=True)
         return loss
 
