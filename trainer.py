@@ -94,11 +94,11 @@ class FineTuneDataset(Dataset):
     def __len__(self):
         return len(self.df)
 
-def get_mola_dataloader(df_path, ignore_smiles, tokenizer_name, batch_size, **kwargs):
+def get_mola_dataloader(df_path, ignore_smiles, tokenizer_name, batch_size, access_token=None, **kwargs):
     try:
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, token=access_token)
     except:
-        tokenizer = LlamaTokenizer.from_pretrained(tokenizer_name)
+        tokenizer = LlamaTokenizer.from_pretrained(tokenizer_name, token=access_token)
 
     if not tokenizer.pad_token:
         if tokenizer.eos_token:
@@ -118,10 +118,10 @@ def get_finetune_dataloader(df, batch_size, **kwargs):
     return dataloader
 
 class LitMOLA(L.LightningModule):
-    def __init__(self, demolta_config, text_model_name):
+    def __init__(self, demolta_config, text_model_name, access_token=None):
         super().__init__()
         self.save_hyperparameters()
-        self.model = MOLLA(demolta_config, text_model_name)
+        self.model = MOLLA(demolta_config, text_model_name, access_token)
 
     def training_step(self, batch, batch_idx):
         input_ids=batch['input_ids']

@@ -572,10 +572,10 @@ class FineTuneCollateFn:
         return batch
 
 class MOLLA(nn.Module):
-    def __init__(self, mol_config, text_model_name):
+    def __init__(self, mol_config, text_model_name, access_token=None):
         super(MOLLA, self).__init__()
         self.mol_model = DeMOLTaModel(mol_config)
-        self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name)
+        self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name, token=access_token)
         self.freeze_language_model()
         self.vocab_size = self.language_model.config.vocab_size
         self.language_projection = nn.Linear(mol_config.hidden_dim, self.language_model.config.hidden_size)

@@ -18,7 +18,8 @@ def main(
         pretrain_df_path,
         pretrain_val_df_path,
         demolta_size,
-        test_df_path
+        test_df_path,
+        access_token,
     ):
     smiles_to_filter = pd.read_csv(test_df_path)['SMILES'].tolist()
     train_dataloader = get_mola_dataloader(
@@ -26,12 +27,14 @@ def main(
         ignore_smiles=smiles_to_filter,
         tokenizer_name=text_model_name,
         batch_size=batch_size,
+        access_token=access_token,
     )
     val_dataloader = get_mola_dataloader(
         df_path=pretrain_val_df_path,
         ignore_smiles=smiles_to_filter,
         tokenizer_name=text_model_name,
         batch_size=batch_size,
+        access_token=access_token,
     )
     if demolta_size =='xsmall':
         demolta_config = DeMOLTaConfig(
@@ -43,12 +46,14 @@ def main(
     lit_model = LitMOLA(
         demolta_config=demolta_config,
         text_model_name=text_model_name,
+        access_token=access_token,
     )
     checkpoint_callback = SaveTrainableParamsCheckpoint(
         monitor='val_loss',
         dirpath='./checkpoint/',
-        filename='mola-pretrain' + f'-{demolta_size}-{text_model_name.split("/")[-1]}' + '-{step}-{val_loss:.2f}',
+        filename='mola-pretrain' + f'-{demolta_size}-{text_model_name.split("/")[-1]}' + '-{step}-{train_loss:.4f}-{val_loss:.2f}',
         save_top_k=3,
+        save_last=True,
     )
     trainer = L.Trainer(
         accelerator='gpu',
@@ -64,13 +69,14 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("batch_size", type=int)
-    parser.add_argument("max_step", type=int)
-    parser.add_argument("text_model_name", type=str)
-    parser.add_argument("pretrain_df_path", type=str)
-    parser.add_argument("pretrain_val_df_path", type=str)
-    parser.add_argument("demolta_size", type=str)
-    parser.add_argument("test_df_path", type=str)
+    parser.add_argument("--batch_size", type=int)
+    parser.add_argument("--max_step", type=int)
+    parser.add_argument("--text_model_name", type=str)
+    parser.add_argument("--pretrain_df_path", type=str)
+    parser.add_argument("--pretrain_val_df_path", type=str)
+    parser.add_argument("--demolta_size", type=str)
+    parser.add_argument("--test_df_path", type=str)
+    parser.add_argument("--access_token", type=str)
 
 
     args = parser.parse_args()
@@ -81,7 +87,8 @@ if __name__ == "__main__":
         max_step=args.max_step,
         text_model_name=args.text_model_name,
         pretrain_df_path=args.pretrain_df_path,
-        pretrain_val_df_path=args.pretrain_va_df_path,
+        pretrain_val_df_path=args.pretrain_val_df_path,
         demolta_size=args.demolta_size,
-        test_df_path=args.test_df_path
+        test_df_path=args.test_df_path,
+        access_token=args.access_token,
     )
