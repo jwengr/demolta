@@ -2,9 +2,11 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import deepchem as dc
 import lightning as L
 
+from torch.optim import AdamW
 from torch.utils.data import IterableDataset, Dataset, DataLoader
 from transformers import AutoTokenizer, LlamaTokenizer
 from lightning.pytorch.callbacks import ModelCheckpoint
@@ -15,6 +17,27 @@ from model.modeling_demolta import MOLLA, MOLLACollateFn, MOLAForMolculeRegressi
 from optim import Lion
 
 from weakref import proxy
+
+        
+def smiles_split(df, smiles, fraction=0.2, seed=42, k_fold=5, spplitter='scaffold'):
+    Xs, ys = np.arange(len(smiles)), np.ones(len(smiles))
+    dataset = dc.data.DiskDataset.from_numpy(X=Xs,y=ys,w=np.zeros(len(smiles)),ids=smiles)
+    if spplitter == 'random':
+        splitter = dc.splits.RandomSplitter()
+    elif spplitter == 'scaffold':
+        splitter = dc.splits.ScaffoldSplitter()
+    elif spplitter == 'fingerprints':
+        splitter = dc.splits.FingerprintSplitter()
+    folds = splitter.k_fold_split(dataset, k=k_fold, seed=seed)
+    dfs = []
+    for fold in folds:
+        train_indices = fold[0].X
+        val_indices = fold[1].X
+        train_df = df.iloc[train_indices].reset_index(drop=True)
+        val_df = df.iloc[val_indices].reset_index(drop=True)
+        dfs.append((train_df, val_df))
+    return dfs
+
 
 class SaveTrainableParamsCheckpoint(ModelCheckpoint):
     def __init__(self, *args, **kwargs):
@@ -151,7 +174,7 @@ class LitMOLAForRegression(L.LightningModule):
         atom_feats=batch['mols']['atom_feats']
         bond_feats=batch['mols']['bond_feats']
         attention_matrix_mask=batch['mols']['attention_mask']
-        labels=batch['labels']
+        labels=batch['labels']/100.0
         outputs = self.model(
             atom_feats=atom_feats,
             bond_feats=bond_feats,
@@ -161,7 +184,7 @@ class LitMOLAForRegression(L.LightningModule):
         loss, logits = outputs
         loss1, loss2 = loss
         loss = (loss1**0.5 + loss2**0.5)/2
-        self.log("train_loss", loss, on_step=True, on_epoch=False, prog_bar=True, logger=True)
+        self.log("train_loss", loss*100, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -173,9 +196,11 @@ class LitMOLAForRegression(L.LightningModule):
             atom_feats=atom_feats,
             bond_feats=bond_feats,
             attention_matrix_mask=attention_matrix_mask,
-            labels=labels
         )
-        loss, logits = outputs
+        logits = outputs[1]*100.0
+        loss1 = F.mse_loss(logits[:,0].flatten(), labels[:,0].flatten())
+        loss2 = F.mse_loss(logits[:,1].flatten(), labels[:,1].flatten())
+        loss = (loss1, loss2)
         self.validation_step_outputs.append(loss)
         return loss
     
@@ -187,23 +212,5 @@ class LitMOLAForRegression(L.LightningModule):
         self.validation_step_outputs.clear()
 
     def configure_optimizers(self):
-        return Lion(self.parameters())
-        
-def smiles_split(df, smiles, fraction=0.2, seed=42, k_fold=5, spplitter='scaffold'):
-    Xs, ys = np.arange(len(smiles)), np.ones(len(smiles))
-    dataset = dc.data.DiskDataset.from_numpy(X=Xs,y=ys,w=np.zeros(len(smiles)),ids=smiles)
-    if spplitter == 'random':
-        splitter = dc.splits.RandomSplitter()
-    elif spplitter == 'scaffold':
-        splitter = dc.splits.ScaffoldSplitter()
-    elif spplitter == 'fingerprints':
-        splitter = dc.splits.FingerprintSplitter()
-    folds = splitter.k_fold_split(dataset, k=k_fold, seed=seed)
-    dfs = []
-    for fold in folds:
-        train_indices = fold[0].X
-        val_indices = fold[1].X
-        train_df = df.iloc[train_indices].reset_index(drop=True)
-        val_df = df.iloc[val_indices].reset_index(drop=True)
-        dfs.append((train_df, val_df))
-    return dfs
+        return Lion(self.parameters(), lr=1e-3)
+

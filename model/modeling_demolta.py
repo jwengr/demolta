@@ -660,17 +660,23 @@ class MOLAForMolculeRegression(nn.Module):
         self.mol_model = DeMOLTaModel(mol_config)
         self.language_model_config = AutoConfig.from_pretrained(text_model_name)
         self.language_projection = nn.Linear(mol_config.hidden_dim, self.language_model_config.hidden_size)
-        self.regressor = nn.LazyLinear(n_class)
+        self.dropout = nn.Dropout(mol_config.dropout)
+        self.regressor = nn.Sequential(
+            nn.Linear(mol_config.hidden_dim, mol_config.hidden_dim),
+            nn.LayerNorm(mol_config.hidden_dim),
+            nn.GELU(),
+            nn.Linear(mol_config.hidden_dim, n_class)
+        )
 
     def forward(self, atom_feats, bond_feats, attention_matrix_mask, labels=None):
         atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
         mol_embeds = atom_outputs.mean(dim=1)
-        mol_embeds = self.language_projection(mol_embeds)
-        mol_embeds = F.gelu(mol_embeds)
+        #mol_embeds = self.language_projection(mol_embeds)
+        mol_embeds = self.dropout(mol_embeds)
         logits = self.regressor(mol_embeds)
         loss1, loss2 = None, None
         if labels is not None:
-            loss1 = F.mse_loss(logits[:,0], labels[:,0])
-            loss2 = F.mse_loss(logits[:,1], labels[:,1])
+            loss1 = F.mse_loss(logits[:,0].flatten(), labels[:,0].flatten())
+            loss2 = F.mse_loss(logits[:,1].flatten(), labels[:,1].flatten())
         loss = (loss1, loss2)
         return loss, logits
