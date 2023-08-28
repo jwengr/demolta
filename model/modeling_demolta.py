@@ -576,7 +576,7 @@ class MOLLA(nn.Module):
         super(MOLLA, self).__init__()
         self.mol_model = DeMOLTaModel(mol_config)
         if hf_token:
-            self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name, token=hf_token, torch_dtype = "auto")
+            self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name, use_auth_token=hf_token, torch_dtype = "auto")
         else:
             self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name)
         self.freeze_language_model()
