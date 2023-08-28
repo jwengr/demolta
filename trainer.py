@@ -23,15 +23,19 @@ def upload_file_to_gcs(bucket_name, destination_blob_name, local_file_path, gcp_
 
 
 class SaveTrainableParamsCheckpoint(ModelCheckpoint):
-    def __init__(self, bucket_name='', destination_blob_name='', gcp_credentials_path='', *args, **kwargs):
+    def __init__(self, bucket_name='', destination_blob_name='', gcp_credentials_path='', ddp=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gcp_bucket_name = bucket_name
         self.destination_blob_name = destination_blob_name
         self.gcp_credentials_path=gcp_credentials_path
+        self.ddp=ddp
         
 
     def _save_checkpoint(self, trainer, filepath):
-        model = trainer.lightning_module
+        if not self.ddp:
+            model = trainer.lightning_module
+        else:
+            model = trainer.lightning_module.module
 
         # Filter and save trainable parameters
         trainable_state_dict = {name: param for name, param in model.named_parameters() if param.requires_grad}

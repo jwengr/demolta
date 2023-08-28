@@ -62,6 +62,7 @@ def main(
         bucket_name=bucket_name,
         destination_blob_name=destination_blob_name,
         gcp_credentials_path=gcp_credentials_path,
+        ddp=True if deepspeed else False
     )
 
     if deepspeed:
