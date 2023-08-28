@@ -117,7 +117,7 @@ class LitMOLAFintTuneDataModule(L.LightningDataModule):
         self.batch_size = batch_size
         self.hf_token = hf_token
         self.seed = seed
-        self.fold = k_fold
+        self.k_fold = k_fold
         self.train_fold = train_fold
         self.spliter = spliter
 
@@ -128,7 +128,7 @@ class LitMOLAFintTuneDataModule(L.LightningDataModule):
         if stage == 'fit':
             df = pd.read_csv(self.df_path)
             smiles = df['SMILES'].tolist()
-            dfs = smiles_split(df, smiles, 0.2, seed=self.seed, k_fold=self.kfold, splitter=self.spliter)
+            dfs = smiles_split(df, smiles, 0.2, seed=self.seed, k_fold=self.k_fold, splitter=self.spliter)
             train_df, val_df = dfs[self.train_fold]
             self.train_dataset = FineTuneDataset(train_df)
             self.val_dataset = FineTuneDataset(val_df)

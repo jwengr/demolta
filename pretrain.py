@@ -6,7 +6,7 @@ import lightning as L
 from torch.utils.data import DataLoader
 
 from model.modeling_demolta import DeMOLTaConfig
-from data import LitMOLADataModule, LitMOLAFintTuneDataModule
+from data import LitMOLADataModule
 from trainer import LitMOLA, SaveTrainableParamsCheckpoint
 
 
