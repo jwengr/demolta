@@ -576,7 +576,7 @@ class MOLLA(nn.Module):
         super(MOLLA, self).__init__()
         self.mol_model = DeMOLTaModel(mol_config)
         if hf_token:
-            self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name, token=hf_token)
+            self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name, token=hf_token, torch_dtype = "auto")
         else:
             self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name)
         self.freeze_language_model()
@@ -644,18 +644,7 @@ class MOLLA(nn.Module):
         )
 
         return outputs
-
-
-def param_to_buffer(module):
-    """Turns all parameters of a module into buffers."""
-    modules = module.modules()
-    module = next(modules)
-    for name, param in deepcopy(list(module.named_parameters(recurse=False))):
-        delattr(module, name) # Unregister parameter
-        module.register_buffer(name, param)
-    for module in modules:
-        param_to_buffer(module)
-
+    
 
 class MOLAForMolculeRegression(nn.Module):
     def __init__(self, mol_config, text_model_name, n_class):
