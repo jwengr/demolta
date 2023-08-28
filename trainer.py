@@ -1,47 +1,33 @@
-import numpy as np
-import pandas as pd
+import os
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import deepchem as dc
 import lightning as L
 
-from torch.optim import AdamW
-from torch.utils.data import IterableDataset, Dataset, DataLoader
-from transformers import AutoTokenizer, LlamaTokenizer
+from google.cloud import storage
+from google.oauth2 import service_account
 from lightning.pytorch.callbacks import ModelCheckpoint
 
-from model.modeling_demolta import DeMOLTaCollateFn, DeMOLTaFeaturizer
-from model.modeling_demolta import FineTuneCollateFn
-from model.modeling_demolta import MOLLA, MOLLACollateFn, MOLAForMolculeRegression
+from model.modeling_demolta import MOLLA, MOLAForMolculeRegression
 from optim import Lion
 
 from weakref import proxy
 
-        
-def smiles_split(df, smiles, fraction=0.2, seed=42, k_fold=5, spplitter='scaffold'):
-    Xs, ys = np.arange(len(smiles)), np.ones(len(smiles))
-    dataset = dc.data.DiskDataset.from_numpy(X=Xs,y=ys,w=np.zeros(len(smiles)),ids=smiles)
-    if spplitter == 'random':
-        splitter = dc.splits.RandomSplitter()
-    elif spplitter == 'scaffold':
-        splitter = dc.splits.ScaffoldSplitter()
-    elif spplitter == 'fingerprints':
-        splitter = dc.splits.FingerprintSplitter()
-    folds = splitter.k_fold_split(dataset, k=k_fold, seed=seed)
-    dfs = []
-    for fold in folds:
-        train_indices = fold[0].X
-        val_indices = fold[1].X
-        train_df = df.iloc[train_indices].reset_index(drop=True)
-        val_df = df.iloc[val_indices].reset_index(drop=True)
-        dfs.append((train_df, val_df))
-    return dfs
+    
+def upload_file_to_gcs(bucket_name, destination_blob_name, local_file_path, gcp_credentials_path):
+    credentials = service_account.Credentials.from_service_account_file(gcp_credentials_path)
+    client = storage.Client(credentials=credentials)
+    bucket = client.get_bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+    blob.upload_from_filename(local_file_path)
+    print(f"File {local_file_path} uploaded to {destination_blob_name} in {bucket_name}.")
 
 
 class SaveTrainableParamsCheckpoint(ModelCheckpoint):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, bucket_name='', destination_blob_name='', gcp_credentials_path='', *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.gcp_bucket_name = bucket_name
+        self.destination_blob_name = destination_blob_name
+        self.gcp_credentials_path=gcp_credentials_path
         
 
     def _save_checkpoint(self, trainer, filepath):
@@ -51,6 +37,9 @@ class SaveTrainableParamsCheckpoint(ModelCheckpoint):
         trainable_state_dict = {name: param for name, param in model.named_parameters() if param.requires_grad}
 
         torch.save(trainable_state_dict, filepath)
+        file_name = filepath.split('/')[-1]
+        if self.gcp_bucket_name and self.destination_blob_name:
+            upload_file_to_gcs(self.gcp_bucket_name, f'{self.destination_blob_name}/{os.path.basename(file_name)}', filepath, self.gcp_credentials_path)
 
         self._last_global_step_saved = trainer.global_step
 
@@ -59,69 +48,12 @@ class SaveTrainableParamsCheckpoint(ModelCheckpoint):
             for logger in trainer.loggers:
                 logger.after_save_checkpoint(proxy(self))
 
-class MOLADataset(IterableDataset):
-    def __init__(self, df_path, ignore_smiles = []):
-        self.df = pd.read_csv(df_path)
-        self.ignore_smiles = ignore_smiles
-        self.featurizer = DeMOLTaFeaturizer()
-
-    def __iter__(self):
-        for idx, row in self.df.iterrows():
-            smiles = row['smiles']
-            if smiles in self.ignore_smiles:
-                continue
-            sample = {
-                'mol_feats': self.featurizer(smiles=smiles),
-                'query': row['query'],
-                'answer': row['answer']
-            }
-            yield sample
-
-class FineTuneDataset(Dataset):
-    def __init__(self, df):
-        self.df = df
-        self.featurizer = DeMOLTaFeaturizer()
-
-    def __getitem__(self, idx):
-        row = self.df.iloc[idx]
-        smiles = row['SMILES']
-        sample = {
-            'mol_feats': self.featurizer(smiles=smiles),
-            'label': [row['MLM'], row['HLM']]
-        }
-        return sample
-
-    def __len__(self):
-        return len(self.df)
-
-def get_mola_dataloader(df_path, ignore_smiles, tokenizer_name, batch_size, access_token=None, **kwargs):
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, token=access_token)
-    except:
-        tokenizer = LlamaTokenizer.from_pretrained(tokenizer_name, token=access_token)
-
-    if not tokenizer.pad_token:
-        if tokenizer.eos_token:
-            tokenizer.pad_token = tokenizer.eos_token
-        else:
-            tokenizer.pad_token_id=2
-
-    dataset = MOLADataset(df_path, ignore_smiles)
-    collate_fn = MOLLACollateFn(tokenizer)
-    dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn, **kwargs)
-    return dataloader
-
-def get_finetune_dataloader(df, batch_size, **kwargs):
-    dataset = FineTuneDataset(df)
-    collate_fn = FineTuneCollateFn()
-    dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn, **kwargs)
-    return dataloader
 
 class LitMOLA(L.LightningModule):
-    def __init__(self, demolta_config, text_model_name, access_token=None):
+    def __init__(self, demolta_config, text_model_name, hf_token=None, deepspeed=False):
         super().__init__()
         self.save_hyperparameters()
-        self.model = MOLLA(demolta_config, text_model_name, access_token)
+        self.model = MOLLA(demolta_config, text_model_name, hf_token)
 
     def training_step(self, batch, batch_idx):
         input_ids=batch['input_ids']
@@ -162,7 +94,11 @@ class LitMOLA(L.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return Lion(self.parameters())
+        if self.hparams.deepspeed:
+            from deepspeed.ops.adam import DeepSpeedCPUAdam
+            return DeepSpeedCPUAdam(self.parameters(), lr=1e-6)
+        else:
+            return Lion(self.parameters())
     
 class LitMOLAForRegression(L.LightningModule):
     def __init__(self, demolta_config, text_model_name, n_class):

@@ -58,3 +58,6 @@ build/
 
 # test
 test*
+
+#auth
+.auth/

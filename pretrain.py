@@ -6,7 +6,8 @@ import lightning as L
 from torch.utils.data import DataLoader
 
 from model.modeling_demolta import DeMOLTaConfig
-from trainer import LitMOLA, get_mola_dataloader, SaveTrainableParamsCheckpoint
+from data import LitMOLADataModule, LitMOLAFintTuneDataModule
+from trainer import LitMOLA, SaveTrainableParamsCheckpoint
 
 
 torch.set_float32_matmul_precision('medium')
@@ -19,23 +20,24 @@ def main(
         pretrain_val_df_path,
         demolta_size,
         test_df_path,
-        access_token,
+        accumulate_grad_batches=1,
+        hf_token='',
+        gcp_credentials_path='',
+        bucket_name='',
+        destination_blob_name='',
+        deepspeed=False,
     ):
+
     smiles_to_filter = pd.read_csv(test_df_path)['SMILES'].tolist()
-    train_dataloader = get_mola_dataloader(
-        df_path=pretrain_df_path,
+    lit_mola_data_module = LitMOLADataModule(
+        train_df_path=pretrain_df_path,
+        val_df_path=pretrain_val_df_path,
         ignore_smiles=smiles_to_filter,
         tokenizer_name=text_model_name,
         batch_size=batch_size,
-        access_token=access_token,
+        hf_token=hf_token,
     )
-    val_dataloader = get_mola_dataloader(
-        df_path=pretrain_val_df_path,
-        ignore_smiles=smiles_to_filter,
-        tokenizer_name=text_model_name,
-        batch_size=batch_size,
-        access_token=access_token,
-    )
+    
     if demolta_size =='xsmall':
         demolta_config = DeMOLTaConfig(
             num_layers=12,
@@ -43,28 +45,50 @@ def main(
             ff_dim=1536,
             num_heads=6,
         )
+
     lit_model = LitMOLA(
         demolta_config=demolta_config,
         text_model_name=text_model_name,
-        access_token=access_token,
+        hf_token=hf_token,
+        deepspeed=deepspeed
     )
+        
     checkpoint_callback = SaveTrainableParamsCheckpoint(
         monitor='val_loss',
         dirpath='./checkpoint/',
         filename='mola-pretrain' + f'-{demolta_size}-{text_model_name.split("/")[-1]}' + '-{step}-{train_loss:.4f}-{val_loss:.2f}',
         save_top_k=3,
         save_last=True,
+        bucket_name=bucket_name,
+        destination_blob_name=destination_blob_name,
+        gcp_credentials_path=gcp_credentials_path,
     )
-    trainer = L.Trainer(
-        accelerator='gpu',
-        precision='bf16',
-        max_steps=max_step,
-        callbacks=[checkpoint_callback],
-        gradient_clip_val=1.0,
-        val_check_interval=10000,
-        limit_val_batches=1000,
-    )
-    trainer.fit(lit_model, train_dataloader, val_dataloader)
+
+    if deepspeed:
+        from lightning.pytorch.strategies import DeepSpeedStrategy
+        trainer = L.Trainer(
+            accelerator='gpu',
+            precision='bf16-mixed',
+            max_steps=max_step,
+            callbacks=[checkpoint_callback],
+            accumulate_grad_batches=accumulate_grad_batches,
+            gradient_clip_val=1.0,
+            val_check_interval=10000,
+            limit_val_batches=1000,
+            strategy=DeepSpeedStrategy(offload_optimizer=True, allgather_bucket_size=5e8, reduce_bucket_size=5e8),
+        )
+    else:
+        trainer = L.Trainer(
+            accelerator='gpu',
+            precision='bf16-mixed',
+            max_steps=max_step,
+            callbacks=[checkpoint_callback],
+            accumulate_grad_batches=accumulate_grad_batches,
+            gradient_clip_val=1.0,
+            val_check_interval=10,
+            limit_val_batches=10,
+        )
+    trainer.fit(lit_model, lit_mola_data_module)
 
 
 if __name__ == "__main__":
@@ -76,8 +100,12 @@ if __name__ == "__main__":
     parser.add_argument("--pretrain_val_df_path", type=str)
     parser.add_argument("--demolta_size", type=str)
     parser.add_argument("--test_df_path", type=str)
-    parser.add_argument("--access_token", type=str)
-
+    parser.add_argument("--accumulate_grad_batches", type=int)
+    parser.add_argument("--hf_token", type=str)
+    parser.add_argument("--gcp_credentials_path", type=str)
+    parser.add_argument("--bucket_name", type=str)
+    parser.add_argument("--destination_blob_name", type=str)
+    parser.add_argument("--deepspeed", type=lambda x: x=='True', default=False)
 
     args = parser.parse_args()
 
@@ -90,5 +118,12 @@ if __name__ == "__main__":
         pretrain_val_df_path=args.pretrain_val_df_path,
         demolta_size=args.demolta_size,
         test_df_path=args.test_df_path,
-        access_token=args.access_token,
+        accumulate_grad_batches=args.accumulate_grad_batches,
+        hf_token=args.hf_token,
+        gcp_credentials_path=args.gcp_credentials_path,
+        bucket_name=args.bucket_name,
+        destination_blob_name=args.destination_blob_name,
+        deepspeed=args.deepspeed,
     )
+
+# python pretrain.py --batch_size=4 --max_step=2000000 --text_model_name=facebook/galactica-125m --pretrain_df_path=./preproc/pretrain.csv --pretrain_val_df_path=./preproc/pretrain_val.csv --demolta_size=xsmall --test_df_path=./data/test.csv --accumulate_grad_batches=2 --gcp_credentials_path=./.auth/flowing-banner-391105-04efc2e014a8.json --bucket_name=jinwoo0766 --destination_blob_name=mola_checkpoint --deepspeed=False
