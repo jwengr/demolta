@@ -608,7 +608,7 @@ class MOLLA(nn.Module):
         if labels is not None:
             labels = labels.to(logits.device)
             logits = logits[:, -labels.size(1) :, :]
-            loss_contrastive_fn = SelfSupervisedLoss(NTXentLoss(temperature=0.1))
+            loss_contrastive_fn = SelfSupervisedLoss(NTXentLoss(temperature=0.1), symmetric=True)
             loss_contrastive = loss_contrastive_fn(mol_embeds.squeeze(1), ref_emb)
             
             shift_logits = logits[..., :-1, :].contiguous()

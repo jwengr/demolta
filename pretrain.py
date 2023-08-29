@@ -101,7 +101,7 @@ def main(
             gradient_clip_val=1.0,
             val_check_interval=10,
             limit_val_batches=10,
-            n_device=n_device
+            devices=n_device
         )
     trainer.fit(lit_model, lit_mola_data_module)
 
