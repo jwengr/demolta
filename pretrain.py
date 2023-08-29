@@ -26,6 +26,7 @@ def main(
         bucket_name='',
         destination_blob_name='',
         deepspeed=False,
+        n_device=1
     ):
 
     smiles_to_filter = pd.read_csv(test_df_path)['SMILES'].tolist()
@@ -88,6 +89,7 @@ def main(
             val_check_interval=10000,
             limit_val_batches=1000,
             strategy=CustomDeepSpeedStargy(offload_optimizer=True, allgather_bucket_size=5e8, reduce_bucket_size=5e8),
+            devices=n_device
         )
     else:
         trainer = L.Trainer(
@@ -99,6 +101,7 @@ def main(
             gradient_clip_val=1.0,
             val_check_interval=10,
             limit_val_batches=10,
+            n_device=n_device
         )
     trainer.fit(lit_model, lit_mola_data_module)
 
@@ -118,6 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("--bucket_name", type=str)
     parser.add_argument("--destination_blob_name", type=str)
     parser.add_argument("--deepspeed", type=lambda x: x=='True', default=False)
+    parser.add_argument("--n_device", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -136,6 +140,7 @@ if __name__ == "__main__":
         bucket_name=args.bucket_name,
         destination_blob_name=args.destination_blob_name,
         deepspeed=args.deepspeed,
+        n_device=args.n_device
     )
 
 # python pretrain.py --batch_size=4 --max_step=2000000 --text_model_name=facebook/galactica-125m --pretrain_df_path=./preproc/pretrain.csv --pretrain_val_df_path=./preproc/pretrain_val.csv --demolta_size=xsmall --test_df_path=./data/test.csv --accumulate_grad_batches=2 --gcp_credentials_path=./.auth/flowing-banner-391105-04efc2e014a8.json --bucket_name=jinwoo0766 --destination_blob_name=mola_checkpoint --deepspeed=False
