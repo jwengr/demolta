@@ -27,6 +27,7 @@ from dgllife.utils import (
 )
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from pytorch_metric_learning.losses import NTXentLoss, SelfSupervisedLoss
 
 
 class DeMOLTaConfig:
@@ -39,7 +40,7 @@ class DeMOLTaConfig:
             num_implicit_valence=6+1,
             num_aromatic=2+1,
             num_hybridization=5+1,
-            num_total_num_H=5+1,
+            num_total_num_H=5+1,    
             num_is_in_ring=2+1,
             num_bond_type=4+1,
             num_conjugated=2+1,
@@ -597,17 +598,24 @@ class MOLLA(nn.Module):
         outputs = self.language_model(
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
+            output_hidden_states=True,
         )
 
         logits = outputs.logits
+        last_hidden_state = outputs.hidden_states[-1]
+        ref_emb = last_hidden_state[:, -1, :]
         loss = None
         if labels is not None:
             labels = labels.to(logits.device)
             logits = logits[:, -labels.size(1) :, :]
+            loss_contrastive_fn = SelfSupervisedLoss(NTXentLoss(temperature=0.1))
+            loss_contrastive = loss_contrastive_fn(mol_embeds.squeeze(1), ref_emb)
+            
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous().to(logits.device)
-            loss_fct = nn.CrossEntropyLoss(reduction="mean")
-            loss = loss_fct(shift_logits.view(-1, self.vocab_size), shift_labels.view(-1))
+            loss_language_model_loss_fn = nn.CrossEntropyLoss(reduction="mean")
+            loss_language_model_loss = loss_language_model_loss_fn(shift_logits.view(-1, self.vocab_size), shift_labels.view(-1))
+            loss = loss_contrastive + loss_language_model_loss * 5.0
         return loss, logits
         
     def freeze_language_model(self):
