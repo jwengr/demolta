@@ -390,10 +390,10 @@ class DeMOLTaEmbedding(nn.Module):
 
     
 class DeMOLTaAttention(nn.Module):
-    def __init__(self, hidden_dim, num_heads, dropout=0.1):
+    def __init__(self, node_hidden_dim, edge_hidden_dim, num_heads, dropout=0.1):
         super(DeMOLTaAttention, self).__init__()
-        self.qkv = nn.Linear(hidden_dim, hidden_dim*3)
-        self.rqk = nn.Linear(hidden_dim, hidden_dim*2)
+        self.qkv = nn.Linear(node_hidden_dim, node_hidden_dim*3)
+        self.rqk = nn.Linear(edge_hidden_dim, num_heads*2)
         self.num_heads = num_heads
         self.head_dim = hidden_dim // num_heads
         self.scale = 1/ ( (3*self.head_dim) ** 0.5)
@@ -405,7 +405,7 @@ class DeMOLTaAttention(nn.Module):
         qkv = qkv.view(batch_size, seq_len, self.num_heads, 3 * self.head_dim).permute(0, 2, 1, 3) # b, h, l, d
         q, k, v = qkv.chunk(3, dim=-1)
         rqk = self.rqk(p)
-        rqk = rqk.view(batch_size, seq_len, seq_len, self.num_heads, 2 * self.head_dim).permute(0, 3, 1, 2, 4) # b, h, l, l, d  
+        rqk = rqk.view(batch_size, seq_len, seq_len, self.num_heads, 2).permute(0, 3, 1, 2, 4) # b, h, l, l, 2
         rq, rk = rqk.chunk(2, dim=-1)
         attention = torch.matmul(q, k.transpose(-2, -1)) + (rq * k.unsqueeze(-2)).sum(dim=-1) + (rk * q.unsqueeze(-2)).sum(dim=-1)
         attention.masked_fill_(attention_matrix_mask.unsqueeze(1)==0, -1e4)
@@ -428,12 +428,12 @@ class FeedForwardNetwork(nn.Module):
         return x
     
 class NodeEncoderLayerWithPreLayerNorm(nn.Module):
-    def __init__(self, hidden_dim, num_heads, ff_dim, dropout=0.1):
+    def __init__(self, node_hidden_dim,edge_hidden_dim, num_heads, ff_dim, dropout=0.1):
         super(NodeEncoderLayerWithPreLayerNorm, self).__init__()
-        self.attention = DeMOLTaAttention(hidden_dim, num_heads, dropout)
-        self.ffn = FeedForwardNetwork(hidden_dim, ff_dim, dropout)
-        self.norm1 = nn.LayerNorm(hidden_dim)
-        self.norm2 = nn.LayerNorm(hidden_dim)
+        self.attention = DeMOLTaAttention(node_hidden_dim, node_hidden_dim, num_heads, dropout)
+        self.ffn = FeedForwardNetwork(node_hidden_dim, ff_dim, dropout)
+        self.norm1 = nn.LayerNorm(node_hidden_dim)
+        self.norm2 = nn.LayerNorm(node_hidden_dim)
         
     def forward(self, x, p, attention_matrix_mask):
         x + self.attention(self.norm1(x), p, attention_matrix_mask)
@@ -441,10 +441,10 @@ class NodeEncoderLayerWithPreLayerNorm(nn.Module):
         return x
     
 class OuterProduct(nn.Module):
-    def __init__(self, hidden_dim, num_heads, dropout=0.1):
+    def __init__(self, node_hidden_dim, edge_hidden_dim, num_heads, dropout=0.1):
         super(OuterProduct, self).__init__()
-        self.o12 = nn.Linear(hidden_dim, num_heads*2)
-        self.o3 = nn.Linear(num_heads**2, hidden_dim)
+        self.o12 = nn.Linear(node_hidden_dim, num_heads*2)
+        self.o3 = nn.Linear(num_heads**2, edge_hidden_dim)
         
     def forward(self, x):
         o1, o2 = self.o12(x).chunk(2, dim=-1)
@@ -478,14 +478,14 @@ class TriangularUpdate(nn.Module):
         return output
 
 class EdgeEncoderLayerWithPreLayerNorm(nn.Module):
-    def __init__(self, hidden_dim, num_heads, ff_dim, dropout=0.1):
+    def __init__(self, node_hidden_dim, edge_hidden_dim, num_heads, ff_dim, dropout=0.1):
         super(EdgeEncoderLayerWithPreLayerNorm, self).__init__()
-        self.outer_product = OuterProduct(hidden_dim, num_heads, dropout)
-        self.triangular_update = TriangularUpdate(hidden_dim, num_heads, dropout)
-        self.ffn = FeedForwardNetwork(hidden_dim, ff_dim, dropout)
-        self.norm1 = nn.LayerNorm(hidden_dim)
-        self.norm2 = nn.LayerNorm(hidden_dim)
-        self.norm3 = nn.LayerNorm(hidden_dim)
+        self.outer_product = OuterProduct(node_hidden_dim, edge_hidden_dim, num_heads, dropout)
+        self.triangular_update = TriangularUpdate(edge_hidden_dim, num_heads, dropout)
+        self.ffn = FeedForwardNetwork(edge_hidden_dim, ff_dim, dropout)
+        self.norm1 = nn.LayerNorm(edge_hidden_dim)
+        self.norm2 = nn.LayerNorm(edge_hidden_dim)
+        self.norm3 = nn.LayerNorm(edge_hidden_dim)
         
     def forward(self, x, p, attention_matrix_mask):
         p = p + self.outer_product(self.norm1(x))
@@ -496,8 +496,8 @@ class EdgeEncoderLayerWithPreLayerNorm(nn.Module):
 class EncoderLayer(nn.Module):
     def __init__(self, node_hidden_dim, edge_hidden_dim, num_heads, node_ff_dim, edge_ff_dim, dropout=0.1):
         super(EncoderLayer, self).__init__()
-        self.node_encoder_layer = NodeEncoderLayerWithPreLayerNorm(node_hidden_dim, num_heads, node_ff_dim, dropout)
-        self.edge_encoder_layer = EdgeEncoderLayerWithPreLayerNorm(edge_hidden_dim, num_heads, edge_ff_dim, dropout)
+        self.node_encoder_layer = NodeEncoderLayerWithPreLayerNorm(node_hidden_dim, edge_hiddin_dim, num_heads, node_ff_dim, dropout)
+        self.edge_encoder_layer = EdgeEncoderLayerWithPreLayerNorm(edge_hidden_dim, edge_hidden_dim, num_heads, edge_ff_dim, dropout)
         
     def forward(self, x, p, attention_matrix_mask):
         x = self.node_encoder_layer(x, p, attention_matrix_mask)
