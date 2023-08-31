@@ -483,7 +483,7 @@ class EdgeEncoderLayerWithPreLayerNorm(nn.Module):
         self.outer_product = OuterProduct(node_hidden_dim, edge_hidden_dim, num_heads, dropout)
         self.triangular_update = TriangularUpdate(edge_hidden_dim, num_heads, dropout)
         self.ffn = FeedForwardNetwork(edge_hidden_dim, ff_dim, dropout)
-        self.norm1 = nn.LayerNorm(edge_hidden_dim)
+        self.norm1 = nn.LayerNorm(node_hidden_dim)
         self.norm2 = nn.LayerNorm(edge_hidden_dim)
         self.norm3 = nn.LayerNorm(edge_hidden_dim)
         
