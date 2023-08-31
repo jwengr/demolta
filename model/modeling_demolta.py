@@ -620,7 +620,7 @@ class MOLLA(nn.Module):
 
         logits = outputs.logits
         last_hidden_state = outputs.hidden_states[-1]
-        ref_emb = last_hidden_state[:, -1, :]
+        ref_emb = last_hidden_state[:, 0, :]
         loss = None
         if labels is not None:
             labels = labels.to(logits.device)
