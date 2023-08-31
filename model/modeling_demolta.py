@@ -341,7 +341,8 @@ class DeMOLTaBondEmbedding(nn.Module):
 class DeMOLTaEmbedding(nn.Module):
     def __init__(
             self, 
-            hidden_dim,
+            node_hidden_dim,
+            edge_hidden_dim,
             num_atom=64+1, 
             num_atom_charge=5+1, 
             num_degree=11+1,
@@ -369,7 +370,7 @@ class DeMOLTaEmbedding(nn.Module):
             num_hybridization,
             num_total_num_H,
             num_is_in_ring,
-            hidden_dim, 
+            node_hidden_dim, 
             dropout
         )
         self.bond_embedding = DeMOLTaBondEmbedding(
@@ -378,7 +379,7 @@ class DeMOLTaEmbedding(nn.Module):
             num_ring,
             num_stereo,
             num_shortest_path,
-            hidden_dim, 
+            edge_hidden_dim, 
             dropout
         )
     
