@@ -72,8 +72,8 @@ class DeMOLTaConfig:
         self.node_hidden_dim = node_hidden_dim
         self.edge_hidden_dim = edge_hidden_dim
         self.num_heads = num_heads
-        self.node_ff_dim = ff_dim
-        self.node_ff_dim = ff_dim
+        self.node_ff_dim = node_ff_dim
+        self.edge_ff_dim = edge_ff_dim
         self.num_layers = num_layers
         self.dropout = dropout
 
