@@ -428,9 +428,9 @@ class FeedForwardNetwork(nn.Module):
         return x
     
 class NodeEncoderLayerWithPreLayerNorm(nn.Module):
-    def __init__(self, node_hidden_dim,edge_hidden_dim, num_heads, ff_dim, dropout=0.1):
+    def __init__(self, node_hidden_dim, edge_hidden_dim, num_heads, ff_dim, dropout=0.1):
         super(NodeEncoderLayerWithPreLayerNorm, self).__init__()
-        self.attention = DeMOLTaAttention(node_hidden_dim, node_hidden_dim, num_heads, dropout)
+        self.attention = DeMOLTaAttention(node_hidden_dim, edge_hidden_dim, num_heads, dropout)
         self.ffn = FeedForwardNetwork(node_hidden_dim, ff_dim, dropout)
         self.norm1 = nn.LayerNorm(node_hidden_dim)
         self.norm2 = nn.LayerNorm(node_hidden_dim)
