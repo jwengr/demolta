@@ -599,11 +599,11 @@ class MOLLA(nn.Module):
             self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name)
         self.freeze_language_model()
         self.vocab_size = self.language_model.config.vocab_size
-        self.language_projection = nn.Linear(mol_config.node_hidden_dim, self.language_model.config.hidden_size)
+        self.language_projection = nn.Linear(mol_config.node_hidden_dim*2, self.language_model.config.hidden_size)
 
     def forward(self, input_ids, input_attention_mask, atom_feats, bond_feats, attention_matrix_mask, labels=None):
         atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
-        mol_embeds = torch.cat([atom_outputs.mean(dim=1).unsqueeze(1),atom_outputs.max(dim=1).values.unsqueeze(1)])
+        mol_embeds = torch.cat([atom_outputs.mean(dim=1).unsqueeze(1),atom_outputs.max(dim=1).values.unsqueeze(1)], dim=-1)
         mol_embeds = self.language_projection(mol_embeds)
         mol_attention_mask = torch.ones(
             mol_embeds.size()[:-1], dtype=torch.long, device=mol_embeds.device
