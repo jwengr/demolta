@@ -462,7 +462,7 @@ class TriangularUpdate(nn.Module):
         self.dropout = nn.Dropout(dropout)
         
     def forward(self, p, attention_matrix_mask):
-        t1, t2, t3, t4= self.t(p).chunk(5, dim=-1)
+        t1, t2, t3, t4= self.t(p).chunk(4, dim=-1)
         t5 = self.t5(p)
         t12 = t1 * t2
         t12.masked_fill_(attention_matrix_mask.unsqueeze(-1)==0, -1e4)
