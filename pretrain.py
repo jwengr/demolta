@@ -38,13 +38,42 @@ def main(
         batch_size=batch_size,
         hf_token=hf_token,
     )
-    
+
     if demolta_size =='xsmall':
         demolta_config = DeMOLTaConfig(
             num_layers=12,
-            hidden_dim=384,
-            ff_dim=1536,
+            node_hidden_dim=384,
+            edge_hidden_dim=128,
+            node_ff_dim=1536,
+            edge_ff_dim=768,
             num_heads=6,
+        )   
+    elif demolta_size =='small':
+        demolta_config = DeMOLTaConfig(
+            num_layers=6,
+            node_hidden_dim=768,
+            edge_hidden_dim=256,
+            node_ff_dim=3072,
+            edge_ff_dim=1536,
+            num_heads=12,
+        )
+    elif demolta_size =='base':
+        demolta_config = DeMOLTaConfig(
+            num_layers=12,
+            node_hidden_dim=768,
+            edge_hidden_dim=256,
+            node_ff_dim=3072,
+            edge_ff_dim=1536,
+            num_heads=12,
+        )
+    elif demolta_size =='large':
+        demolta_config = DeMOLTaConfig(
+            num_layers=24,
+            node_hidden_dim=1024,
+            edge_hidden_dim=512,
+            node_ff_dim=4096,
+            edge_ff_dim=2048,
+            num_heads=16,
         )
 
     lit_model = LitMOLA(
@@ -76,9 +105,16 @@ def main(
 
             def save_checkpoint(self, checkpoint, filepath, storage_options=None) -> None:
                 filepath = self.broadcast(filepath)
+                val_loss = self.trainer.callback_metrics("val_loss", None)
+                if val_loss is not None:
+                    filepath = filepath.replace(".cpkt", f"-val_loss={val_loss:.4f}.ckpt")
                 _exclude_keys = ["state_dict", "optimizer_states"]
                 checkpoint = {k: v for k, v in checkpoint.items() if k not in _exclude_keys}
                 self.deepspeed_engine.save_checkpoint(filepath, client_state=checkpoint, tag="checkpoint", exclude_frozen_parameters=True)
+                convert_zero_checkpoint_to_fp32_state_dict(
+                    filepath,
+                    os.path.join(filepath,"fp32.pt")
+                )
 
         trainer = L.Trainer(
             accelerator='gpu',

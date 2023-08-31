@@ -47,10 +47,12 @@ class DeMOLTaConfig:
             num_ring=2+1,
             num_stereo=6+1,
             num_shortest_path=6+1,
-            hidden_dim=128,
-            num_heads=8,
-            ff_dim=512,
-            num_layers=6,
+            node_hidden_dim=768,
+            edge_hiddem_dim=256,
+            num_heads=32,
+            node_ff_dim=768,
+            edge_ff_dim=256,
+            num_layers=12,
             dropout=0.1,
         ):
         self.num_atom = num_atom
@@ -67,9 +69,11 @@ class DeMOLTaConfig:
         self.num_ring = num_ring
         self.num_stereo = num_stereo
         self.num_shortest_path = num_shortest_path
-        self.hidden_dim = hidden_dim
+        self.node_hidden_dim = node_hidden_dim
+        self.edge_hidden_dim = edge_hidden_dim
         self.num_heads = num_heads
-        self.ff_dim = ff_dim
+        self.node_ff_dim = ff_dim
+        self.node_ff_dim = ff_dim
         self.num_layers = num_layers
         self.dropout = dropout
 
@@ -274,7 +278,7 @@ class DeMOLTaAtomEmbedding(nn.Module):
             num_hybridization,
             num_total_num_H,
             num_is_in_ring,
-            hidden_dim, 
+            hidden_dim,
             dropout=0.1
         ):
         super(DeMOLTaAtomEmbedding, self).__init__()
@@ -449,14 +453,16 @@ class OuterProduct(nn.Module):
         return output
     
 class TriangularUpdate(nn.Module):
-    def __init__(self, hidden_dim, dropout=0.1):
+    def __init__(self, hidden_dim, num_heads, dropout=0.1):
         super(TriangularUpdate, self).__init__()
-        self.t = nn.Linear(hidden_dim, hidden_dim*5)
-        self.t6 = nn.Linear(hidden_dim, hidden_dim)
+        self.t = nn.Linear(hidden_dim, num_heads*4)
+        self.t5 = nn.Linear(hidden_dim, hidden_dim)
+        self.t6 = nn.Linear(num_heads, hidden_dim)
         self.dropout = nn.Dropout(dropout)
         
     def forward(self, p, attention_matrix_mask):
-        t1, t2, t3, t4, t5 = self.t(p).chunk(5, dim=-1)
+        t1, t2, t3, t4= self.t(p).chunk(5, dim=-1)
+        t5 = self.t5(p)
         t12 = t1 * t2
         t12.masked_fill_(attention_matrix_mask.unsqueeze(-1)==0, -1e4)
         t34 = t3 * t4
@@ -474,7 +480,7 @@ class EdgeEncoderLayerWithPreLayerNorm(nn.Module):
     def __init__(self, hidden_dim, num_heads, ff_dim, dropout=0.1):
         super(EdgeEncoderLayerWithPreLayerNorm, self).__init__()
         self.outer_product = OuterProduct(hidden_dim, num_heads, dropout)
-        self.triangular_update = TriangularUpdate(hidden_dim, dropout)
+        self.triangular_update = TriangularUpdate(hidden_dim, num_heads, dropout)
         self.ffn = FeedForwardNetwork(hidden_dim, ff_dim, dropout)
         self.norm1 = nn.LayerNorm(hidden_dim)
         self.norm2 = nn.LayerNorm(hidden_dim)
@@ -487,10 +493,10 @@ class EdgeEncoderLayerWithPreLayerNorm(nn.Module):
         return p
     
 class EncoderLayer(nn.Module):
-    def __init__(self, hidden_dim, num_heads, ff_dim, dropout=0.1):
+    def __init__(self, node_hidden_dim, edge_hidden_dim, num_heads, node_ff_dim, edge_ff_dim, dropout=0.1):
         super(EncoderLayer, self).__init__()
-        self.node_encoder_layer = NodeEncoderLayerWithPreLayerNorm(hidden_dim, num_heads, ff_dim, dropout)
-        self.edge_encoder_layer = EdgeEncoderLayerWithPreLayerNorm(hidden_dim, num_heads, ff_dim, dropout)
+        self.node_encoder_layer = NodeEncoderLayerWithPreLayerNorm(node_hidden_dim, num_heads, node_ff_dim, dropout)
+        self.edge_encoder_layer = EdgeEncoderLayerWithPreLayerNorm(edge_hidden_dim, num_heads, edge_ff_dim, dropout)
         
     def forward(self, x, p, attention_matrix_mask):
         x = self.node_encoder_layer(x, p, attention_matrix_mask)
@@ -498,13 +504,22 @@ class EncoderLayer(nn.Module):
         return x, p
     
 class DeMOLTaEncoder(nn.Module):
-    def __init__(self, hidden_dim, num_heads, ff_dim, num_layers, dropout=0.1):
+    def __init__(self, node_hidden_dim, edge_hidden_dim, num_heads, node_ff_dim, edge_ff_dim, num_layers, dropout=0.1):
         super(DeMOLTaEncoder, self).__init__()
-        self.layers = nn.ModuleList([EncoderLayer(hidden_dim, num_heads, ff_dim, dropout) for _ in range(num_layers)])
+        self.layers = nn.ModuleList([EncoderLayer(node_hidden_dim, edge_hidden_dim, num_heads, node_ff_dim, edge_ff_dim, dropout) for _ in range(num_layers)])
         
     def forward(self, x, p, attention_matrix_mask):
         for layer in self.layers:
-            x, p = layer(x, p, attention_matrix_mask)
+
+            def create_custom_forward(module):
+                def custom_forward(*inputs):
+                    return module(*inputs, past_key_value, output_attentions)
+                return custom_forward
+            
+            x, p = torch.utils.checkpoint.checkpoint(
+                create_custom_forward(layer), x, p, attention_matrix_mask
+            )
+
         return x, p
     
 class DeMOLTaModel(nn.Module):
@@ -512,7 +527,8 @@ class DeMOLTaModel(nn.Module):
         super(DeMOLTaModel, self).__init__()
         self.config = config
         self.embedding = DeMOLTaEmbedding(
-            config.hidden_dim,
+            config.node_hidden_dim,
+            config.edge_hidden_dim,
             config.num_atom,
             config.num_atom_charge,
             config.num_degree,
@@ -529,7 +545,7 @@ class DeMOLTaModel(nn.Module):
             config.num_shortest_path,
             config.dropout
         )
-        self.encoder = DeMOLTaEncoder(config.hidden_dim, config.num_heads, config.ff_dim, config.num_layers, config.dropout)
+        self.encoder = DeMOLTaEncoder(config.node_hidden_dim, config.edge_hidden_dim, config.num_heads, config.node_ff_dim, config.edge_ff_dim, config.num_layers, config.dropout)
 
         
     def forward(self, atom_feats, bond_feats, attention_matrix_mask):
@@ -671,7 +687,6 @@ class MOLAForMolculeRegression(nn.Module):
     def forward(self, atom_feats, bond_feats, attention_matrix_mask, labels=None):
         atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
         mol_embeds = atom_outputs.mean(dim=1)
-        #mol_embeds = self.language_projection(mol_embeds)
         mol_embeds = self.dropout(mol_embeds)
         logits = self.regressor(mol_embeds)
         loss1, loss2 = None, None

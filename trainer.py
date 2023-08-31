@@ -58,6 +58,7 @@ class LitMOLA(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.model = MOLLA(demolta_config, text_model_name, hf_token)
+        self.validation_step_outputs = []
 
     def training_step(self, batch, batch_idx):
         input_ids=batch['input_ids']
@@ -93,9 +94,15 @@ class LitMOLA(L.LightningModule):
             attention_matrix_mask=attention_matrix_mask,
             labels=labels
         )
-        loss = outputs[0]
-        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        loss = outputs[0].detach().cpu()
+        self.validation_step_outputs.append(loss)
         return loss
+    
+    def on_validation_epoch_end(self):
+        loss = torch.Tensor(self.validation_step_outputs)
+        loss = loss.mean()
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.validation_step_outputs.clear()
 
     def configure_optimizers(self):
         if self.hparams.deepspeed:
