@@ -514,7 +514,7 @@ class DeMOLTaEncoder(nn.Module):
 
             def create_custom_forward(module):
                 def custom_forward(*inputs):
-                    return module(*inputs, past_key_value, output_attentions)
+                    return module(*inputs)
                 return custom_forward
             
             x, p = torch.utils.checkpoint.checkpoint(
