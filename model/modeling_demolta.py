@@ -48,7 +48,7 @@ class DeMOLTaConfig:
             num_stereo=6+1,
             num_shortest_path=6+1,
             node_hidden_dim=768,
-            edge_hiddem_dim=256,
+            edge_hidden_dim=256,
             num_heads=32,
             node_ff_dim=768,
             edge_ff_dim=256,
