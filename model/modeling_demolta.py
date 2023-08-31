@@ -497,7 +497,7 @@ class EncoderLayer(nn.Module):
     def __init__(self, node_hidden_dim, edge_hidden_dim, num_heads, node_ff_dim, edge_ff_dim, dropout=0.1):
         super(EncoderLayer, self).__init__()
         self.node_encoder_layer = NodeEncoderLayerWithPreLayerNorm(node_hidden_dim, edge_hidden_dim, num_heads, node_ff_dim, dropout)
-        self.edge_encoder_layer = EdgeEncoderLayerWithPreLayerNorm(edge_hidden_dim, edge_hidden_dim, num_heads, edge_ff_dim, dropout)
+        self.edge_encoder_layer = EdgeEncoderLayerWithPreLayerNorm(node_hidden_dim, edge_hidden_dim, num_heads, edge_ff_dim, dropout)
         
     def forward(self, x, p, attention_matrix_mask):
         x = self.node_encoder_layer(x, p, attention_matrix_mask)
