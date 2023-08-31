@@ -395,7 +395,7 @@ class DeMOLTaAttention(nn.Module):
         self.qkv = nn.Linear(node_hidden_dim, node_hidden_dim*3)
         self.rqk = nn.Linear(edge_hidden_dim, num_heads*2)
         self.num_heads = num_heads
-        self.head_dim = hidden_dim // num_heads
+        self.head_dim = node_hidden_dim // num_heads
         self.scale = 1/ ( (3*self.head_dim) ** 0.5)
         self.dropout = nn.Dropout(dropout)
 
