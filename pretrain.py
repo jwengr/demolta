@@ -26,7 +26,7 @@ def main(
         bucket_name='',
         destination_blob_name='',
         deepspeed=False,
-        device=1
+        device='0'
     ):
 
     smiles_to_filter = pd.read_csv(test_df_path)['SMILES'].tolist()
@@ -82,18 +82,7 @@ def main(
         hf_token=hf_token,
         deepspeed=deepspeed
     )
-        
-    checkpoint_callback = SaveTrainableParamsCheckpoint(
-        monitor='val_loss',
-        dirpath='./checkpoint/',
-        filename='mola-pretrain' + f'-{demolta_size}-{text_model_name.split("/")[-1]}' + '-{step}-{train_loss:.4f}-{val_loss:.2f}',
-        save_top_k=3,
-        save_last=True,
-        bucket_name=bucket_name,
-        destination_blob_name=destination_blob_name,
-        gcp_credentials_path=gcp_credentials_path,
-        ddp=True if deepspeed else False
-    )
+
 
     if deepspeed:
         from lightning.pytorch.strategies import DeepSpeedStrategy
@@ -128,6 +117,18 @@ def main(
             devices=device
         )
     else:
+        checkpoint_callback = SaveTrainableParamsCheckpoint(
+            monitor='val_loss',
+            dirpath='./checkpoint/',
+            filename='mola-pretrain' + f'-{demolta_size}-{text_model_name.split("/")[-1]}' + '-{step}-{train_loss:.4f}-{val_loss:.2f}',
+            save_top_k=3,
+            save_last=True,
+            bucket_name=bucket_name,
+            destination_blob_name=destination_blob_name,
+            gcp_credentials_path=gcp_credentials_path,
+            ddp=True if deepspeed else False
+        )
+
         trainer = L.Trainer(
             accelerator='gpu',
             precision='bf16-mixed',
@@ -179,4 +180,5 @@ if __name__ == "__main__":
         device=args.device
     )
 
+# pip install deepspeed transformers lightning rdkit-pypi dgl dgllife google-cloud-storage pytorch-metric-learning 
 # python pretrain.py --batch_size=4 --max_step=2000000 --text_model_name=facebook/galactica-125m --pretrain_df_path=./preproc/pretrain.csv --pretrain_val_df_path=./preproc/pretrain_val.csv --demolta_size=xsmall --test_df_path=./data/test.csv --accumulate_grad_batches=2 --gcp_credentials_path=./.auth/flowing-banner-391105-04efc2e014a8.json --bucket_name=jinwoo0766 --destination_blob_name=mola_checkpoint --deepspeed=False
