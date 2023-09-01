@@ -140,16 +140,16 @@ class DeMOLTaFeaturizer:
             atom_positions.append(atom_position)
 
         atom_feats = {
-            'atomic_number': torch.LongTensor(atom_numbers)+1,
-            'formal_charge': torch.LongTensor(atom_charges)+1,
-            'degree': torch.LongTensor(atom_degrees)+1,
-            'explicit_valence': torch.LongTensor(atom_explicit_valences)+1,
-            'implicit_valence': torch.LongTensor(atom_implicit_valences)+1,
-            'aromatic': torch.LongTensor(atom_aromatics)+1,
-            'hybridization': torch.LongTensor(atom_hybridizations)+1,
-            'total_num_H': torch.LongTensor(atom_total_num_Hs)+1,
-            'is_in_ring': torch.LongTensor(atom_is_in_rings)+1,
-            'position': torch.FloatTensor(atom_positions)
+            'atomic_number': torch.LongTensor(np.array(atom_numbers))+1,
+            'formal_charge': torch.LongTensor(np.array(atom_charges))+1,
+            'degree': torch.LongTensor(np.array(atom_degrees))+1,
+            'explicit_valence': torch.LongTensor(np.array(atom_explicit_valences))+1,
+            'implicit_valence': torch.LongTensor(np.array(atom_implicit_valences))+1,
+            'aromatic': torch.LongTensor(np.array(atom_aromatics))+1,
+            'hybridization': torch.LongTensor(np.array(atom_hybridizations))+1,
+            'total_num_H': torch.LongTensor(np.array(atom_total_num_Hs))+1,
+            'is_in_ring': torch.LongTensor(np.array(atom_is_in_rings))+1,
+            'position': torch.FloatTensor(np.array(atom_positions))
         }
         return atom_feats
     

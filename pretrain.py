@@ -1,3 +1,4 @@
+import os
 import argparse
 import pandas as pd
 import torch
@@ -94,9 +95,8 @@ def main(
 
             def save_checkpoint(self, checkpoint, filepath, storage_options=None) -> None:
                 filepath = self.broadcast(filepath)
-                val_loss = self.trainer.callback_metrics("val_loss", None)
-                if val_loss is not None:
-                    filepath = filepath.replace(".cpkt", f"-val_loss={val_loss:.4f}.ckpt")
+                val_loss = float(self.lightning_module.trainer.callback_metrics["val_loss"].detach().cpu())
+                filepath = filepath.replace(".ckpt", f"-val_loss={val_loss:.4f}.ckpt")
                 _exclude_keys = ["state_dict", "optimizer_states"]
                 checkpoint = {k: v for k, v in checkpoint.items() if k not in _exclude_keys}
                 self.deepspeed_engine.save_checkpoint(filepath, client_state=checkpoint, tag="checkpoint", exclude_frozen_parameters=True)
@@ -105,14 +105,15 @@ def main(
                     os.path.join(filepath,"fp32.pt")
                 )
 
+
         trainer = L.Trainer(
             accelerator='gpu',
             precision='bf16-mixed',
             max_steps=max_step,
             accumulate_grad_batches=accumulate_grad_batches,
             gradient_clip_val=1.0,
-            val_check_interval=10000,
-            limit_val_batches=1000,
+            val_check_interval=10,
+            limit_val_batches=10,
             strategy=CustomDeepSpeedStargy(offload_optimizer=True, allgather_bucket_size=5e8, reduce_bucket_size=5e8),
             devices=device
         )
