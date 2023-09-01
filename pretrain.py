@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from model.modeling_demolta import DeMOLTaConfig
 from datautils import LitMOLADataModule
-from trainer import LitMOLA, SaveTrainableParamsCheckpoint
+from trainer import LitMOLA, SaveTrainableParamsCheckpoint, CustomDeepSpeedStrategy
 
 
 torch.set_float32_matmul_precision('medium')
@@ -86,26 +86,14 @@ def main(
 
 
     if deepspeed:
-        from lightning.pytorch.strategies import DeepSpeedStrategy
-        from lightning.pytorch.utilities.deepspeed import convert_zero_checkpoint_to_fp32_state_dict
-
-        class CustomDeepSpeedStargy(DeepSpeedStrategy):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-            def save_checkpoint(self, checkpoint, filepath, storage_options=None) -> None:
-                filepath = self.broadcast(filepath)
-                val_loss = float(self.lightning_module.trainer.callback_metrics["val_loss"].detach().cpu())
-                filepath = filepath.replace(".ckpt", f"-val_loss={val_loss:.4f}.ckpt")
-                _exclude_keys = ["state_dict", "optimizer_states"]
-                checkpoint = {k: v for k, v in checkpoint.items() if k not in _exclude_keys}
-                self.deepspeed_engine.save_checkpoint(filepath, client_state=checkpoint, tag="checkpoint", exclude_frozen_parameters=True)
-                convert_zero_checkpoint_to_fp32_state_dict(
-                    filepath,
-                    os.path.join(filepath,"fp32.pt")
-                )
-
-
+        custom_deepspeed_strategy = CustomDeepSpeedStrategy(
+            offload_optimizer=True, 
+            allgather_bucket_size=5e8, 
+            reduce_bucket_size=5e8,
+            bucket_name=bucket_name,
+            destination_blob_name=destination_blob_name,
+            gcp_credentials_path=gcp_credentials_path,
+        )
         trainer = L.Trainer(
             accelerator='gpu',
             precision='bf16-mixed',
@@ -114,7 +102,7 @@ def main(
             gradient_clip_val=1.0,
             val_check_interval=10,
             limit_val_batches=10,
-            strategy=CustomDeepSpeedStargy(offload_optimizer=True, allgather_bucket_size=5e8, reduce_bucket_size=5e8),
+            strategy=custom_deepspeed_strategy,
             devices=device
         )
     else:
@@ -127,9 +115,7 @@ def main(
             bucket_name=bucket_name,
             destination_blob_name=destination_blob_name,
             gcp_credentials_path=gcp_credentials_path,
-            ddp=True if deepspeed else False
         )
-
         trainer = L.Trainer(
             accelerator='gpu',
             precision='bf16-mixed',

@@ -6,6 +6,8 @@ import lightning as L
 from google.cloud import storage
 from google.oauth2 import service_account
 from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.strategies import DeepSpeedStrategy
+from lightning.pytorch.utilities.deepspeed import convert_zero_checkpoint_to_fp32_state_dict
 
 from model.modeling_demolta import MOLLA, MOLAForMolculeRegression
 from optim import Lion
@@ -23,19 +25,15 @@ def upload_file_to_gcs(bucket_name, destination_blob_name, local_file_path, gcp_
 
 
 class SaveTrainableParamsCheckpoint(ModelCheckpoint):
-    def __init__(self, bucket_name='', destination_blob_name='', gcp_credentials_path='', ddp=False, *args, **kwargs):
+    def __init__(self, bucket_name='', destination_blob_name='', gcp_credentials_path='', *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gcp_bucket_name = bucket_name
         self.destination_blob_name = destination_blob_name
         self.gcp_credentials_path=gcp_credentials_path
-        self.ddp=ddp
         
 
     def _save_checkpoint(self, trainer, filepath):
-        if not self.ddp:
-            model = trainer.lightning_module
-        else:
-            model = trainer.lightning_module.module
+        model = trainer.lightning_module.module
 
         # Filter and save trainable parameters
         trainable_state_dict = {name: param for name, param in model.named_parameters() if param.requires_grad}
@@ -51,6 +49,29 @@ class SaveTrainableParamsCheckpoint(ModelCheckpoint):
         if trainer.is_global_zero:
             for logger in trainer.loggers:
                 logger.after_save_checkpoint(proxy(self))
+
+
+class CustomDeepSpeedStrategy(DeepSpeedStrategy):
+    def __init__(self, bucket_name='', destination_blob_name='', gcp_credentials_path='', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gcp_bucket_name = bucket_name
+        self.destination_blob_name = destination_blob_name
+        self.gcp_credentials_path=gcp_credentials_path
+
+    def save_checkpoint(self, checkpoint, filepath, storage_options=None) -> None:
+        filepath = self.broadcast(filepath)
+        val_loss = float(self.lightning_module.trainer.callback_metrics["val_loss"].detach().cpu())
+        filepath = filepath.replace(".ckpt", f"-val_loss={val_loss:.4f}.ckpt")
+        _exclude_keys = ["state_dict", "optimizer_states"]
+        checkpoint = {k: v for k, v in checkpoint.items() if k not in _exclude_keys}
+        self.deepspeed_engine.save_checkpoint(filepath, client_state=checkpoint, tag="checkpoint", exclude_frozen_parameters=True)
+        pt_path = f"epoch={self.lightning_module.trainer.current_epoch}-step={self.lightning_module.trainer.global_step}-val_loss={val_loss:.4f}.pt"
+        convert_zero_checkpoint_to_fp32_state_dict(
+            filepath,
+            os.path.join(filepath, pt_path)
+        )
+        if self.gcp_bucket_name and self.destination_blob_name:
+            upload_file_to_gcs(self.gcp_bucket_name, f'{self.destination_blob_name}/{os.path.basename(pt_path)}', pt_path, self.gcp_credentials_path)
 
 
 class LitMOLA(L.LightningModule):
