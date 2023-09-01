@@ -1,0 +1,101 @@
+smiles,query,answer
+CC[NH+](C)CCNC(=O)NCc1ccc(N2CC[NH+](CC)CC2)nc1,What is the SMILES of this molecule?,CC[NH+](C)CCNC(=O)NCc1ccc(N2CC[NH+](CC)CC2)nc1
+C[C@H]1CCCC[C@H]1[NH2+]CC(=O)NC(c1ccccc1)c1ccccc1,What is the SMILES string of this molecule?,C[C@H]1CCCC[C@H]1[NH2+]CC(=O)NC(c1ccccc1)c1ccccc1
+CCC[C@H](C(=O)NC1CCC(Oc2ccc(C#N)cn2)CC1)[NH+](C)C,What is the SMILES of this molecule?,CCC[C@H](C(=O)NC1CCC(Oc2ccc(C#N)cn2)CC1)[NH+](C)C
+Cc1nn(C)c2c1[nH+]c(N)n2C[C@@H]1Cc2ccccc21,What is the SMILES string of this molecule?,Cc1nn(C)c2c1[nH+]c(N)n2C[C@@H]1Cc2ccccc21
+CCO[C@@H](CCNC(=O)N[C@@H](C)c1ccc(OC)c(OC)c1)C1CCCC1,What is the SMILES of this compound?,CCO[C@@H](CCNC(=O)N[C@@H](C)c1ccc(OC)c(OC)c1)C1CCCC1
+CCN(CC)C(=O)CCCN[C@@H](c1ccccn1)C1CCCC1,Give me the SMILES of this molecule.,CCN(CC)C(=O)CCCN[C@@H](c1ccccn1)C1CCCC1
+CCN(Cc1ccc(OCc2ccccc2)cc1)C(=O)CSc1nncc2ccccc12,What is the SMILES string of this compound?,CCN(Cc1ccc(OCc2ccccc2)cc1)C(=O)CSc1nncc2ccccc12
+C=CCn1c(CN(C)Cc2cc3c(cc2Cl)OCO3)nnc1SCc1cccc(F)c1,Give me the SMILES of this molecule.,C=CCn1c(CN(C)Cc2cc3c(cc2Cl)OCO3)nnc1SCc1cccc(F)c1
+COc1ccc2nc(N(C)CCN3CCOC3=O)c(C)cc2c1,What is the SMILES of this compound?,COc1ccc2nc(N(C)CCN3CCOC3=O)c(C)cc2c1
+Cc1csc(CNc2ccc(C(=O)N3CCC[C@H](C)C3)cc2C)n1,Give me the SMILES of this molecule.,Cc1csc(CNc2ccc(C(=O)N3CCC[C@H](C)C3)cc2C)n1
+COc1ccc(C(=O)NCC(=O)NCCCOCC(F)(F)F)cc1,Give me the SMILES string of this molecule.,COc1ccc(C(=O)NCC(=O)NCCCOCC(F)(F)F)cc1
+COc1ccc(CCCC(=O)Nc2nccs2)cc1C,What is the SMILES of this compound?,COc1ccc(CCCC(=O)Nc2nccs2)cc1C
+C[C@H](N[C@@H]1CCc2ncnn2C1)C(=O)N1CCCc2ccccc21,Give me the SMILES string of this molecule.,C[C@H](N[C@@H]1CCc2ncnn2C1)C(=O)N1CCCc2ccccc21
+O=C(Nc1ccc2c(N3CCCC3)nc[nH+]c2c1)c1ccco1,Give me the SMILES of this molecule.,O=C(Nc1ccc2c(N3CCCC3)nc[nH+]c2c1)c1ccco1
+CCOC(=O)c1c(C)oc2cc(C)c(NS(=O)(=O)c3ccc(Br)cc3)cc12,Give me the SMILES of this compound.,CCOC(=O)c1c(C)oc2cc(C)c(NS(=O)(=O)c3ccc(Br)cc3)cc12
+O=C(Oc1cccc(Cl)c1)C1CC[NH+](CC(F)(F)F)CC1,Give me the SMILES string of this molecule.,O=C(Oc1cccc(Cl)c1)C1CC[NH+](CC(F)(F)F)CC1
+[NH3+][C@@H](Cc1ccccc1)C(=O)N[C@@H](CCCCNC(=O)OCc1ccccc1)C(=O)[O-],What is the SMILES of this molecule?,[NH3+][C@@H](Cc1ccccc1)C(=O)N[C@@H](CCCCNC(=O)OCc1ccccc1)C(=O)[O-]
+CCN(CC(C)C)C(=O)Nc1cc(C)cc2ccc[nH+]c12,What is the SMILES string of this molecule?,CCN(CC(C)C)C(=O)Nc1cc(C)cc2ccc[nH+]c12
+Cc1cccnc1-c1cccc2c1O[C@@H](CNC(=O)c1cccc(-n3cccn3)c1)C2,Give me the SMILES string of this molecule.,Cc1cccnc1-c1cccc2c1O[C@@H](CNC(=O)c1cccc(-n3cccn3)c1)C2
+CC[C@@H](C)C[NH+](CC)CC(C)(C)[C@H](N)c1ccccc1,Give me the SMILES string of this compound.,CC[C@@H](C)C[NH+](CC)CC(C)(C)[C@H](N)c1ccccc1
+CN[C@@H](C)c1cccc(SCc2nc(C(C)(C)C)cs2)c1,What is the SMILES string of this compound?,CN[C@@H](C)c1cccc(SCc2nc(C(C)(C)C)cs2)c1
+C=C(C)COc1cc(C[NH+]2CCC[C@@H](NC(=O)CCC)C2)ccc1OC,Give me the SMILES of this compound.,C=C(C)COc1cc(C[NH+]2CCC[C@@H](NC(=O)CCC)C2)ccc1OC
+Cn1c(=O)c(N2CCC(NC(=O)Nc3ccc(F)c(Cl)c3)CC2)nc2ccccc21,Give me the SMILES of this molecule.,Cn1c(=O)c(N2CCC(NC(=O)Nc3ccc(F)c(Cl)c3)CC2)nc2ccccc21
+O=C1CC[C@@H](NCc2cccnc2)[C@H](c2cccc(F)c2)N1,Give me the SMILES of this molecule.,O=C1CC[C@@H](NCc2cccnc2)[C@H](c2cccc(F)c2)N1
+CCN(CCCc1nc2ccccc2o1)CCC(=O)OC,Give me the SMILES of this compound.,CCN(CCCc1nc2ccccc2o1)CCC(=O)OC
+CCOC(=O)c1ccccc1NC(=O)COC(=O)c1ccc[nH]c1=O,Give me the SMILES of this compound.,CCOC(=O)c1ccccc1NC(=O)COC(=O)c1ccc[nH]c1=O
+CC[NH+](Cc1ccccn1)[C@@H](C)C(=O)c1ccc(C)cc1,What is the SMILES of this compound?,CC[NH+](Cc1ccccn1)[C@@H](C)C(=O)c1ccc(C)cc1
+CCCC1CC[NH+]([C@@H](C)[C@H](C)CNC)CC1,Give me the SMILES string of this molecule.,CCCC1CC[NH+]([C@@H](C)[C@H](C)CNC)CC1
+COc1cc(CCC2CCN(/C([O-])=N/c3ncnn3C)CC2)cc(OC)c1,What is the SMILES of this molecule?,COc1cc(CCC2CCN(/C([O-])=N/c3ncnn3C)CC2)cc(OC)c1
+CCOc1cccc(Oc2cc([C@H](C)O)ccn2)c1,What is the SMILES string of this compound?,CCOc1cccc(Oc2cc([C@H](C)O)ccn2)c1
+Cc1cc(C)cc(C(=O)N(C)CC(=O)OC(C)(C)C)c1,What is the SMILES string of this compound?,Cc1cc(C)cc(C(=O)N(C)CC(=O)OC(C)(C)C)c1
+COc1ccc(C(=O)Nc2c(C(=O)Nc3ccc(C)cc3)oc3ccccc23)cc1OC,Give me the SMILES of this compound.,COc1ccc(C(=O)Nc2c(C(=O)Nc3ccc(C)cc3)oc3ccccc23)cc1OC
+CCc1onc(C)c1NC(=O)CNC(=O)c1ccoc1C,What is the SMILES string of this compound?,CCc1onc(C)c1NC(=O)CNC(=O)c1ccoc1C
+CCOC(=O)CCC[NH2+][C@@H]1CC[C@@H](N)C1,Give me the SMILES of this compound.,CCOC(=O)CCC[NH2+][C@@H]1CC[C@@H](N)C1
+Cc1cc(=O)[nH]c(-c2ccc(NCCN3c4ccccc4C[C@H]3C)nc2)n1,What is the SMILES of this molecule?,Cc1cc(=O)[nH]c(-c2ccc(NCCN3c4ccccc4C[C@H]3C)nc2)n1
+O=C(CN1CCC2(CC1)NC(=O)C[C@H]2C(=O)[O-])NCc1ccco1,Give me the SMILES string of this compound.,O=C(CN1CCC2(CC1)NC(=O)C[C@H]2C(=O)[O-])NCc1ccco1
+CCc1nc(CNC(=O)Nc2nnc(-c3cccs3)s2)no1,What is the SMILES string of this compound?,CCc1nc(CNC(=O)Nc2nnc(-c3cccs3)s2)no1
+Cc1csc([C@H]2CN(Cc3ccc(F)cc3C(F)(F)F)CCO2)n1,Give me the SMILES of this molecule.,Cc1csc([C@H]2CN(Cc3ccc(F)cc3C(F)(F)F)CCO2)n1
+O=C(NC[C@H]1CCCC[NH2+]1)c1cc(C(F)(F)F)ccc1F,Give me the SMILES string of this compound.,O=C(NC[C@H]1CCCC[NH2+]1)c1cc(C(F)(F)F)ccc1F
+Cc1ccccc1-n1nc(C)c(CN(C)Cc2cc(=O)n3ccsc3n2)c1C,Give me the SMILES of this molecule.,Cc1ccccc1-n1nc(C)c(CN(C)Cc2cc(=O)n3ccsc3n2)c1C
+CC(C)c1ncc(-c2ccccn2)c(-c2ccc(CNC(=O)C[C@@H]3CCCO3)cc2)n1,Give me the SMILES of this molecule.,CC(C)c1ncc(-c2ccccn2)c(-c2ccc(CNC(=O)C[C@@H]3CCCO3)cc2)n1
+CC[NH+]1CCC[C@H]1C[NH+](C)C[C@]1(CO)CCOC1,Give me the SMILES string of this molecule.,CC[NH+]1CCC[C@H]1C[NH+](C)C[C@]1(CO)CCOC1
+CCNC(=O)N1CCc2cc(S(=O)(=O)N3CCN(c4ccccc4)CC3)ccc21,What is the SMILES of this molecule?,CCNC(=O)N1CCc2cc(S(=O)(=O)N3CCN(c4ccccc4)CC3)ccc21
+CC(C)CCC[C@H](C)NC(=O)C[NH+]1CCn2c(nn(C)c2=O)C1,What is the SMILES of this compound?,CC(C)CCC[C@H](C)NC(=O)C[NH+]1CCn2c(nn(C)c2=O)C1
+CC(=O)N[C@@H]1CCCN(C(=O)NCc2ccc(C)cc2)C1,What is the SMILES of this compound?,CC(=O)N[C@@H]1CCCN(C(=O)NCc2ccc(C)cc2)C1
+COc1cccc2cc([C@H](C)NC(=O)N[C@@H](C)C(C)(C)C[NH+](C)C)oc12,What is the SMILES of this compound?,COc1cccc2cc([C@H](C)NC(=O)N[C@@H](C)C(C)(C)C[NH+](C)C)oc12
+COc1ccc2c(c1)=C1CCN[C@@H](c3ccc(OC4CCCC4)c(OC)c3)[C@@H]1[NH+]=2,What is the SMILES string of this molecule?,COc1ccc2c(c1)=C1CCN[C@@H](c3ccc(OC4CCCC4)c(OC)c3)[C@@H]1[NH+]=2
+C[C@@H]1C[C@@H]1c1ccc(CCC(=O)NC[C@@H]2C[C@H](O)CN2Cc2ccccc2)o1,What is the SMILES string of this molecule?,C[C@@H]1C[C@@H]1c1ccc(CCC(=O)NC[C@@H]2C[C@H](O)CN2Cc2ccccc2)o1
+Cc1c(C(=O)NC[C@@H](c2cccs2)N(C)C)oc2ccc(Br)cc12,Give me the SMILES of this molecule.,Cc1c(C(=O)NC[C@@H](c2cccs2)N(C)C)oc2ccc(Br)cc12
+COc1cc(-c2cc(C(=O)NCCCn3ccc4ccccc43)[nH]n2)cc(OC)c1OC,Give me the SMILES of this molecule.,COc1cc(-c2cc(C(=O)NCCCn3ccc4ccccc43)[nH]n2)cc(OC)c1OC
+Clc1cccc2ccc(CN3CCc4n[nH]c(-c5ccccc5)c4C3)nc12,Give me the SMILES string of this molecule.,Clc1cccc2ccc(CN3CCc4n[nH]c(-c5ccccc5)c4C3)nc12
+COC(=O)[C@@H]1CN(CCC2=c3ccccc3=[NH+]C2)C(=O)c2ccccc21,What is the SMILES of this molecule?,COC(=O)[C@@H]1CN(CCC2=c3ccccc3=[NH+]C2)C(=O)c2ccccc21
+Cc1ccc(NC(=O)CC[NH2+][C@@H](C)c2nc3c(s2)CCCC3)nc1,Give me the SMILES string of this molecule.,Cc1ccc(NC(=O)CC[NH2+][C@@H](C)c2nc3c(s2)CCCC3)nc1
+C[C@@H](c1ccc(F)c(F)c1)N(C)C(=O)C[NH+]1CCC(C[NH+]2CCOCC2)CC1,Give me the SMILES string of this molecule.,C[C@@H](c1ccc(F)c(F)c1)N(C)C(=O)C[NH+]1CCC(C[NH+]2CCOCC2)CC1
+N#CCCCC(=O)c1ccc(Cl)nc1,What is the SMILES string of this compound?,N#CCCCC(=O)c1ccc(Cl)nc1
+CC(C)C[C@@H](NC(=O)Cc1cccc(F)c1F)C(=O)Nc1cc[nH]n1,What is the SMILES string of this molecule?,CC(C)C[C@@H](NC(=O)Cc1cccc(F)c1F)C(=O)Nc1cc[nH]n1
+O=c1[nH]c2cc3c(cc2cc1CN(Cc1ccc2c(c1)OCO2)Cc1nnnn1C1CCCCC1)OCO3,What is the SMILES of this molecule?,O=c1[nH]c2cc3c(cc2cc1CN(Cc1ccc2c(c1)OCO2)Cc1nnnn1C1CCCCC1)OCO3
+C[C@@H]1CCC(=O)[C@H](C[NH+](C)C[C@@H]2CCC[NH+]2C)C1,What is the SMILES string of this molecule?,C[C@@H]1CCC(=O)[C@H](C[NH+](C)C[C@@H]2CCC[NH+]2C)C1
+COCCOCCNC(=O)N(Cc1ccc(Cl)cc1)C1CC1,Give me the SMILES of this compound.,COCCOCCNC(=O)N(Cc1ccc(Cl)cc1)C1CC1
+CCN[C@H]([C@@H]1CCOC2(CCCC2)C1)[C@@H]1COCCO1,What is the SMILES of this molecule?,CCN[C@H]([C@@H]1CCOC2(CCCC2)C1)[C@@H]1COCCO1
+Cc1ccc(/C=C/CC(=O)Nc2ncccc2C)cc1,What is the SMILES string of this compound?,Cc1ccc(/C=C/CC(=O)Nc2ncccc2C)cc1
+COCCn1/c(=N\C(=O)Cc2ccc(OC)cc2)sc2cc(NC(C)=O)ccc21,What is the SMILES of this compound?,COCCn1/c(=N\C(=O)Cc2ccc(OC)cc2)sc2cc(NC(C)=O)ccc21
+CCC[NH2+][C@H](c1cscc1Br)C(C)(C)N1CCCC1,Give me the SMILES of this compound.,CCC[NH2+][C@H](c1cscc1Br)C(C)(C)N1CCCC1
+CCn1nnnc1SCC(=O)N1c2ccccc2CCc2ccccc21,What is the SMILES of this compound?,CCn1nnnc1SCC(=O)N1c2ccccc2CCc2ccccc21
+Cc1sc2ncnc(-n3ncc(C#N)c3N)c2c1-c1ccc(F)cc1,Give me the SMILES string of this molecule.,Cc1sc2ncnc(-n3ncc(C#N)c3N)c2c1-c1ccc(F)cc1
+O=C(NCc1ccc2c(c1)OCO2)C1CCN(c2ccc(-n3cccn3)nn2)CC1,Give me the SMILES string of this compound.,O=C(NCc1ccc2c(c1)OCO2)C1CCN(c2ccc(-n3cccn3)nn2)CC1
+CCc1ccccc1NC(=O)CN1CC[NH+]([C@@H]2CCC[C@@H](C)C2)CC1,What is the SMILES string of this compound?,CCc1ccccc1NC(=O)CN1CC[NH+]([C@@H]2CCC[C@@H](C)C2)CC1
+Cc1ccc([C@@H]2C[C@@H](C(F)F)n3ncc(C(=O)Nc4ccc(Cl)c(C(F)(F)F)c4)c3N2)cc1,What is the SMILES of this molecule?,Cc1ccc([C@@H]2C[C@@H](C(F)F)n3ncc(C(=O)Nc4ccc(Cl)c(C(F)(F)F)c4)c3N2)cc1
+COc1ccc(-c2nnc3n2N=C2CCCC[C@@H]2S3)c(OC)c1,What is the SMILES of this compound?,COc1ccc(-c2nnc3n2N=C2CCCC[C@@H]2S3)c(OC)c1
+CN(Cc1nc(-c2ccc(Cl)cc2)no1)C(=O)c1occc1Br,Give me the SMILES of this compound.,CN(Cc1nc(-c2ccc(Cl)cc2)no1)C(=O)c1occc1Br
+O=C(NC[C@@H](Cc1cccc(F)c1)N1CCCC1=O)c1ccccc1,What is the SMILES of this molecule?,O=C(NC[C@@H](Cc1cccc(F)c1)N1CCCC1=O)c1ccccc1
+CN1CCO[C@@H](Cn2nnc(C(=O)[O-])c2C(C)(C)C)C1,What is the SMILES string of this molecule?,CN1CCO[C@@H](Cn2nnc(C(=O)[O-])c2C(C)(C)C)C1
+O=S(=O)(N1CCC(NCc2ccc(F)cc2)CC1)C(F)(F)F,What is the SMILES string of this compound?,O=S(=O)(N1CCC(NCc2ccc(F)cc2)CC1)C(F)(F)F
+CC(=O)Nc1cccc(NC(=O)Cc2n[nH]c(=O)c3ccccc23)c1,Give me the SMILES of this compound.,CC(=O)Nc1cccc(NC(=O)Cc2n[nH]c(=O)c3ccccc23)c1
+CNC(=O)Cc1ccc(N[C@H](C)C(=O)N2CCCc3ccccc32)cc1,What is the SMILES of this compound?,CNC(=O)Cc1ccc(N[C@H](C)C(=O)N2CCCc3ccccc32)cc1
+CN(CCN1CCOCC1)C(=O)CCCn1ccnn1,Give me the SMILES string of this molecule.,CN(CCN1CCOCC1)C(=O)CCCn1ccnn1
+Cc1c(C)n(Cc2ccccc2)c2ncn3nc(-c4ccc(Cl)cc4)nc3c12,What is the SMILES of this molecule?,Cc1c(C)n(Cc2ccccc2)c2ncn3nc(-c4ccc(Cl)cc4)nc3c12
+O=C(CCCn1ccnn1)N1CCC(NS(=O)(=O)c2ccccc2)CC1,What is the SMILES of this compound?,O=C(CCCn1ccnn1)N1CCC(NS(=O)(=O)c2ccccc2)CC1
+CCOc1ccc(NC(=O)Cn2c(-c3cccc(F)c3)nc(CC)cc2=O)cc1,What is the SMILES string of this compound?,CCOc1ccc(NC(=O)Cn2c(-c3cccc(F)c3)nc(CC)cc2=O)cc1
+CCOC(=O)c1cc(S(=O)(=O)[N-]c2cc(F)ccc2C)[nH+][nH]1,Give me the SMILES string of this molecule.,CCOC(=O)c1cc(S(=O)(=O)[N-]c2cc(F)ccc2C)[nH+][nH]1
+Cc1nc(COc2ccc(CN3CC[NH2+][C@@H](C)C3)cc2)no1,What is the SMILES string of this compound?,Cc1nc(COc2ccc(CN3CC[NH2+][C@@H](C)C3)cc2)no1
+C[C@@H]1CC[C@H](C(N)=O)CN1C(=O)C[C@@H]1C[NH2+]CCO1,What is the SMILES of this compound?,C[C@@H]1CC[C@H](C(N)=O)CN1C(=O)C[C@@H]1C[NH2+]CCO1
+CC[NH+](CC)CCn1c(SCC(=O)c2ccc(OC)c(Cl)c2)nc2ccccc2c1=O,Give me the SMILES string of this compound.,CC[NH+](CC)CCn1c(SCC(=O)c2ccc(OC)c(Cl)c2)nc2ccccc2c1=O
+CC[C@@H](c1nnnn1C1CCCC1)N(CC[NH+]1CCOCC1)Cc1cc2c(C)cc(C)cc2[nH]c1=O,What is the SMILES of this molecule?,CC[C@@H](c1nnnn1C1CCCC1)N(CC[NH+]1CCOCC1)Cc1cc2c(C)cc(C)cc2[nH]c1=O
+COC(=O)Cn1cc(CN[C@H](C)[C@H]2CN(Cc3ccccc3)CCO2)nn1,Give me the SMILES string of this molecule.,COC(=O)Cn1cc(CN[C@H](C)[C@H]2CN(Cc3ccccc3)CCO2)nn1
+CN(C(=O)COC(=O)CSc1ccc(Cl)cc1)C1CCCCC1,Give me the SMILES string of this compound.,CN(C(=O)COC(=O)CSc1ccc(Cl)cc1)C1CCCCC1
+CCn1ccnc1CN1CC[C@@H]([NH+](C)Cc2ncc(C)o2)C1,What is the SMILES of this compound?,CCn1ccnc1CN1CC[C@@H]([NH+](C)Cc2ncc(C)o2)C1
+C[C@H](Cn1ccnc1)NC(=O)NCCc1ccc(OC(F)(F)F)cc1,Give me the SMILES of this compound.,C[C@H](Cn1ccnc1)NC(=O)NCCc1ccc(OC(F)(F)F)cc1
+[NH3+]Cc1ccc(C[NH+]2CC[C@H]([NH+]3CCCC3)C2)nc1,Give me the SMILES string of this compound.,[NH3+]Cc1ccc(C[NH+]2CC[C@H]([NH+]3CCCC3)C2)nc1
+Cc1cc(S(=O)(=O)[N-]c2ccc(N3CCCS3(=O)=O)cc2)c(Cl)cc1Cl,What is the SMILES string of this compound?,Cc1cc(S(=O)(=O)[N-]c2ccc(N3CCCS3(=O)=O)cc2)c(Cl)cc1Cl
+Cc1nc2cc(NC(=O)CN(C)C(=O)c3ccc(Br)s3)ccc2o1,Give me the SMILES of this compound.,Cc1nc2cc(NC(=O)CN(C)C(=O)c3ccc(Br)s3)ccc2o1
+Clc1csc(CNC[C@H]2COCCO2)c1,What is the SMILES string of this molecule?,Clc1csc(CNC[C@H]2COCCO2)c1
+C[C@H](Oc1ccccc1F)C(=O)N1CCN(C)CC1,Give me the SMILES string of this molecule.,C[C@H](Oc1ccccc1F)C(=O)N1CCN(C)CC1
+Cc1cc([C@@H]2CCC[NH+]2C[C@H](O)COCc2ccco2)on1,Give me the SMILES of this compound.,Cc1cc([C@@H]2CCC[NH+]2C[C@H](O)COCc2ccco2)on1
+Cc1cc(C)c2c(c1)N(Cc1nc(C)c(C)s1)C(=O)C2=O,Give me the SMILES of this molecule.,Cc1cc(C)c2c(c1)N(Cc1nc(C)c(C)s1)C(=O)C2=O
+CCN[C@@H](Cc1ccc(F)cc1F)c1ccc(C)cc1F,What is the SMILES string of this molecule?,CCN[C@@H](Cc1ccc(F)cc1F)c1ccc(C)cc1F
+O=C(N[C@H]1CCCC[C@@H]1OC1CCCC1)N1CCN(C2CC2)CC1,What is the SMILES string of this molecule?,O=C(N[C@H]1CCCC[C@@H]1OC1CCCC1)N1CCN(C2CC2)CC1
+COC(=O)C[C@@H](c1cccc(O)c1)c1oc(CSc2ccccc2F)cc(=O)c1[O-],Give me the SMILES of this compound.,COC(=O)C[C@@H](c1cccc(O)c1)c1oc(CSc2ccccc2F)cc(=O)c1[O-]
+COCCCNC(=O)c1ccc(NC(=O)COc2ccc(-c3ccccc3)cc2)cc1,Give me the SMILES of this molecule.,COCCCNC(=O)c1ccc(NC(=O)COc2ccc(-c3ccccc3)cc2)cc1
+CC[C@H](C)NC(=O)c1ccnc(OC(C)(C)C)c1,What is the SMILES of this molecule?,CC[C@H](C)NC(=O)c1ccnc(OC(C)(C)C)c1

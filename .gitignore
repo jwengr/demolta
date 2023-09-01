@@ -4,8 +4,8 @@ __pycache__/
 
 # Logs and checkpoints
 logs/
-checkpoints/
-lightning_logs/
+# checkpoints/
+# lightning_logs/
 
 # Virtual environment
 venv/
@@ -17,12 +17,12 @@ env/
 
 
 # Data files
-data/
-*.csv
-*.txt
-*.h5
-*.json
-preproc/
+# data/
+# *.csv
+# *.txt
+# *.h5
+# *.json
+# preproc/
 
 # Model weights and artifacts
 model_weights/
@@ -60,4 +60,14 @@ build/
 test*
 
 #auth
-.auth/
+.auth/*.json
+
+#checkpoint
+*.ckpt
+*.pt
+
+#temp
+/preproc/instruction_val.csv
+/preproc/instruction.csv
+/preproc/pretrain.csv
+/preproc/pretrain_val.csv
