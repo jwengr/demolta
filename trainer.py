@@ -65,10 +65,10 @@ class CustomDeepSpeedStrategy(DeepSpeedStrategy):
         _exclude_keys = ["state_dict", "optimizer_states"]
         checkpoint = {k: v for k, v in checkpoint.items() if k not in _exclude_keys}
         self.deepspeed_engine.save_checkpoint(filepath, client_state=checkpoint, tag="checkpoint", exclude_frozen_parameters=True)
-        pt_path = f"epoch={self.lightning_module.trainer.current_epoch}-step={self.lightning_module.trainer.global_step}-val_loss={val_loss:.4f}.pt"
+        pt_path = f"./checkpoints/epoch={self.lightning_module.trainer.current_epoch}-step={self.lightning_module.trainer.global_step}-val_loss={val_loss:.4f}.pt"
         convert_zero_checkpoint_to_fp32_state_dict(
             filepath,
-            os.path.join(filepath, pt_path)
+            pt_path
         )
         if self.gcp_bucket_name and self.destination_blob_name:
             upload_file_to_gcs(self.gcp_bucket_name, f'{self.destination_blob_name}/{os.path.basename(pt_path)}', pt_path, self.gcp_credentials_path)
