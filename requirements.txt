@@ -7,3 +7,4 @@ pytorch-metric-learning==2.3.0
 rdkit-pypi==2022.9.5
 tensorboard==2.14.0
 sentencepiece==0.1.99
+tokenizers==0.13.3
