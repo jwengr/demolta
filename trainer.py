@@ -5,6 +5,7 @@ import lightning as L
 
 from google.cloud import storage
 from google.oauth2 import service_account
+from torch.optim import AdamW
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.strategies import DeepSpeedStrategy
 from lightning.pytorch.utilities.deepspeed import convert_zero_checkpoint_to_fp32_state_dict
@@ -33,7 +34,7 @@ class SaveTrainableParamsCheckpoint(ModelCheckpoint):
         
 
     def _save_checkpoint(self, trainer, filepath):
-        model = trainer.lightning_module.module
+        model = trainer.lightning_module
 
         # Filter and save trainable parameters
         trainable_state_dict = {name: param for name, param in model.named_parameters() if param.requires_grad}
@@ -180,5 +181,5 @@ class LitMOLAForRegression(L.LightningModule):
         self.validation_step_outputs.clear()
 
     def configure_optimizers(self):
-        return Lion(self.parameters(), lr=1e-3)
+        return AdamW(self.parameters(), lr=1e-5)
 

@@ -512,15 +512,15 @@ class DeMOLTaEncoder(nn.Module):
     def forward(self, x, p, attention_matrix_mask):
         for layer in self.layers:
 
-            def create_custom_forward(module):
-                def custom_forward(*inputs):
-                    return module(*inputs)
-                return custom_forward
+            # def create_custom_forward(module):
+            #     def custom_forward(*inputs):
+            #         return module(*inputs)
+            #     return custom_forward
             
-            x, p = torch.utils.checkpoint.checkpoint(
-                create_custom_forward(layer), x, p, attention_matrix_mask
-            )
-
+            # x, p = torch.utils.checkpoint.checkpoint(
+            #     create_custom_forward(layer), x, p, attention_matrix_mask
+            # )
+            x, p = layer(x, p, attention_matrix_mask)
         return x, p
     
 class DeMOLTaModel(nn.Module):
@@ -676,18 +676,19 @@ class MOLAForMolculeRegression(nn.Module):
         super(MOLAForMolculeRegression, self).__init__()
         self.mol_model = DeMOLTaModel(mol_config)
         self.language_model_config = AutoConfig.from_pretrained(text_model_name)
-        self.language_projection = nn.Linear(mol_config.hidden_dim, self.language_model_config.hidden_size)
+        self.language_projection = nn.Linear(mol_config.node_hidden_dim*2, self.language_model_config.hidden_size)
         self.dropout = nn.Dropout(mol_config.dropout)
         self.regressor = nn.Sequential(
-            nn.Linear(mol_config.hidden_dim, mol_config.hidden_dim),
-            nn.LayerNorm(mol_config.hidden_dim),
-            nn.GELU(),
-            nn.Linear(mol_config.hidden_dim, n_class)
+            nn.Linear(mol_config.node_hidden_dim*2, mol_config.node_hidden_dim),
+            nn.LayerNorm(mol_config.node_hidden_dim),
+            nn.Tanh(),
+            nn.Linear(mol_config.node_hidden_dim, n_class),
+            nn.Sigmoid()
         )
 
     def forward(self, atom_feats, bond_feats, attention_matrix_mask, labels=None):
         atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
-        mol_embeds = atom_outputs.mean(dim=1)
+        mol_embeds = torch.cat([atom_outputs.mean(dim=1),atom_outputs.max(dim=1).values], dim=-1)
         mol_embeds = self.dropout(mol_embeds)
         logits = self.regressor(mol_embeds)
         loss1, loss2 = None, None
