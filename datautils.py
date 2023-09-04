@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, LlamaTokenizer
 from model.modeling_demolta import MOLLACollateFn, DeMOLTaFeaturizer, FineTuneCollateFn
 
 
-def smiles_split(df, smiles, fraction=0.2, seed=42, k_fold=5, splitter='scaffold'):
+def smiles_split(df, smiles, seed=42, k_fold=5, splitter='scaffold'):
     import deepchem as dc
     Xs, ys = np.arange(len(smiles)), np.ones(len(smiles))
     dataset = dc.data.DiskDataset.from_numpy(X=Xs,y=ys,w=np.zeros(len(smiles)),ids=smiles)
@@ -111,7 +111,7 @@ class LitMOLADataModule(L.LightningDataModule):
     
 
 class LitMOLAFintTuneDataModule(L.LightningDataModule):
-    def __init__(self, df_path, batch_size, seed=42, k_fold=5, train_fold=0, spliter='fingerprints', hf_token='', **kwargs):
+    def __init__(self, df_path, batch_size, seed=42, k_fold=5, train_fold=0, splitter='fingerprints', hf_token='', **kwargs):
         super().__init__()
         self.df_path = df_path
         self.batch_size = batch_size
@@ -119,7 +119,7 @@ class LitMOLAFintTuneDataModule(L.LightningDataModule):
         self.seed = seed
         self.k_fold = k_fold
         self.train_fold = train_fold
-        self.spliter = spliter
+        self.splitter = splitter
 
         self.featurizer = DeMOLTaFeaturizer()
         self.collate_fn = FineTuneCollateFn()
@@ -128,7 +128,7 @@ class LitMOLAFintTuneDataModule(L.LightningDataModule):
         if stage == 'fit':
             df = pd.read_csv(self.df_path)
             smiles = df['SMILES'].tolist()
-            dfs = smiles_split(df, smiles, 0.2, seed=self.seed, k_fold=self.k_fold, splitter=self.spliter)
+            dfs = smiles_split(df, smiles, seed=self.seed, k_fold=self.k_fold, splitter=self.splitter)
             train_df, val_df = dfs[self.train_fold]
             self.train_dataset = FineTuneDataset(train_df)
             self.val_dataset = FineTuneDataset(val_df)
