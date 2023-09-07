@@ -10,7 +10,7 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.strategies import DeepSpeedStrategy
 from lightning.pytorch.utilities.deepspeed import convert_zero_checkpoint_to_fp32_state_dict
 
-from model.modeling_demolta import MOLLA, MOLAForMoleculeRegression, DeMOLTaForMoleculeRegression
+from model.modeling_demolta import MOLLA, MOLLAForMoleculeRegression, DeMOLTaForMoleculeRegression
 from optim import Lion
 
 from weakref import proxy
@@ -75,7 +75,7 @@ class CustomDeepSpeedStrategy(DeepSpeedStrategy):
             upload_file_to_gcs(self.gcp_bucket_name, f'{self.destination_blob_name}/{os.path.basename(pt_path)}', pt_path, self.gcp_credentials_path)
 
 
-class LitMOLA(L.LightningModule):
+class LitMOLLA(L.LightningModule):
     def __init__(self, demolta_config, text_model_name, hf_token=None, deepspeed=False):
         super().__init__()
         self.save_hyperparameters()
@@ -133,10 +133,65 @@ class LitMOLA(L.LightningModule):
         else:
             return Lion(self.parameters())
     
-class LitMOLAForRegression(L.LightningModule):
+class LitMOLLAForRegression(L.LightningModule):
+    def __init__(self, demolta_config, text_model_name, hf_token=None):
+        super().__init__()
+        self.model = MOLLAForMoleculeRegression(demolta_config, text_model_name, hf_token)
+        self.validation_step_outputs = []
+
+    def training_step(self, batch, batch_idx):
+        input_ids=batch['input_ids']
+        input_attention_mask=batch['attention_mask']
+        atom_feats=batch['mols']['atom_feats']
+        bond_feats=batch['mols']['bond_feats']
+        attention_matrix_mask=batch['mols']['attention_mask']
+        labels=batch['target']/100.0
+        outputs = self.model(
+            input_ids=input_ids,
+            input_attention_mask=input_attention_mask,
+            atom_feats=atom_feats,
+            bond_feats=bond_feats,
+            attention_matrix_mask=attention_matrix_mask,
+            labels=labels
+        )
+        loss, logits = outputs
+        self.log("train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        input_ids=batch['input_ids']
+        input_attention_mask=batch['attention_mask']
+        atom_feats=batch['mols']['atom_feats']
+        bond_feats=batch['mols']['bond_feats']
+        attention_matrix_mask=batch['mols']['attention_mask']
+        labels=batch['target']
+        outputs = self.model(
+            input_ids=input_ids,
+            input_attention_mask=input_attention_mask,
+            atom_feats=atom_feats,
+            bond_feats=bond_feats,
+            attention_matrix_mask=attention_matrix_mask,
+            labels=labels
+        )
+        logits = outputs[1]*100.0
+        loss = F.mse_loss(logits.flatten(), labels.flatten())
+        self.validation_step_outputs.append(loss)
+        return loss
+    
+    def on_validation_epoch_end(self):
+        loss = torch.Tensor(self.validation_step_outputs)
+        loss = (loss.mean())**0.5
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.validation_step_outputs.clear()
+
+    def configure_optimizers(self):
+        return AdamW(self.parameters(), lr=5e-5)
+    
+
+class LitDeMOLTaForRegression(L.LightningModule):
     def __init__(self, demolta_config, text_model_name, n_class):
         super().__init__()
-        self.model = MOLAForMoleculeRegression(demolta_config, text_model_name, n_class)
+        self.model = DeMOLTaForMoleculeRegression(demolta_config, text_model_name, n_class)
         self.validation_step_outputs = []
 
     def training_step(self, batch, batch_idx):

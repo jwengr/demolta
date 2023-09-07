@@ -574,9 +574,12 @@ class MOLLACollateFn:
             'attention_mask': attention_mask,
             'labels': label_ids,
         }
+        if samples[0].get('target'):
+            label = [sample['target'] for sample in samples]
+            batch['target'] = torch.Tensor(label)
         return batch
     
-class FineTuneCollateFn:
+class DeMOLTaFineTuneCollateFn:
     def __init__(self):
         self.mol_collate_fn = DeMOLTaCollateFn()
 
@@ -697,20 +700,21 @@ class DeMOLTaForMoleculeRegression(nn.Module):
         loss = (loss1, loss2)
         return loss, logits
     
-class MOLAForMoleculeRegression(nn.Module):
-    def __init__(self, mol_config, text_model_name, n_class, hf_token=None, ):
-        super(MOLAForMoleculeRegression, self).__init__()
+class MOLLAForMoleculeRegression(nn.Module):
+    def __init__(self, mol_config, text_model_name, hf_token=None):
+        super(MOLLAForMoleculeRegression, self).__init__()
         self.mol_model = DeMOLTaModel(mol_config)
-        self.language_model_config = AutoConfig.from_pretrained(text_model_name)
         if hf_token:
-            self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name, use_auth_token=hf_token, torch_dtype = "auto")
+            self.language_model_config = AutoConfig.from_pretrained(text_model_name, token=hf_token)
+            self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name, token=hf_token)
         else:
+            self.language_model_config = AutoConfig.from_pretrained(text_model_name)
             self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name)
         self.freeze_language_model()
         self.vocab_size = self.language_model.config.vocab_size
         self.language_projection = nn.Linear(mol_config.node_hidden_dim*2, self.language_model.config.hidden_size)
         self.regressor = nn.Sequential(
-            nn.LazyLinear(n_class),
+            nn.LazyLinear(1),
             nn.Sigmoid()
         )
 
@@ -732,10 +736,10 @@ class MOLAForMoleculeRegression(nn.Module):
         )
         last_token_hidden_state = outputs.logits[:,-1,:]
         logits = self.regressor(last_token_hidden_state)
+        
+        loss = None
         if labels is not None:
-            loss1 = F.mse_loss(logits[:,0].flatten(), labels[:,0].flatten())
-            loss2 = F.mse_loss(logits[:,1].flatten(), labels[:,1].flatten())
-        loss = (loss1, loss2)
+            loss = F.mse_loss(logits.flatten(), labels.flatten())
         return loss, logits
 
     def freeze_language_model(self):
