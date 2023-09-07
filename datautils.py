@@ -130,11 +130,19 @@ class LitMOLAFintTuneDataModule(L.LightningDataModule):
             smiles = df['SMILES'].tolist()
             dfs = smiles_split(df, smiles, seed=self.seed, k_fold=self.k_fold, splitter=self.splitter)
             train_df, val_df = dfs[self.train_fold]
+            train_df = self.preproc_train(train_df)
             self.train_dataset = FineTuneDataset(train_df)
             self.val_dataset = FineTuneDataset(val_df)
             self.dataset = FineTuneDataset(df)
         elif stage == 'predict':
             self.pred_dataset = FineTuneDataset(pd.read_csv(self.df_path))
+
+    def preproc_train(self, df):
+        df = df.copy()
+        df = df.groupby('SMILES').mean().reset_index()
+        df.loc[df['HLM']>=100, 'HLM'] = 100.0
+        df.loc[df['MLM']>=100, 'MLM'] = 100.0
+        return df
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, collate_fn=self.collate_fn)

@@ -671,25 +671,24 @@ class MOLLA(nn.Module):
         return outputs
     
 
-class MOLAForMolculeRegression(nn.Module):
+class DeMOLTaForMoleculeRegression(nn.Module):
     def __init__(self, mol_config, text_model_name, n_class):
-        super(MOLAForMolculeRegression, self).__init__()
+        super(DeMOLTaForMoleculeRegression, self).__init__()
         self.mol_model = DeMOLTaModel(mol_config)
         self.language_model_config = AutoConfig.from_pretrained(text_model_name)
-        self.language_projection = nn.Linear(mol_config.node_hidden_dim*2, self.language_model_config.hidden_size)
-        self.dropout = nn.Dropout(mol_config.dropout)
         self.regressor = nn.Sequential(
-            nn.Linear(mol_config.node_hidden_dim*2, mol_config.node_hidden_dim),
+            nn.Dropout(mol_config.dropout),
+            nn.Linear(mol_config.node_hidden_dim, mol_config.node_hidden_dim),
             nn.LayerNorm(mol_config.node_hidden_dim),
             nn.Tanh(),
+            nn.Dropout(mol_config.dropout),
             nn.Linear(mol_config.node_hidden_dim, n_class),
             nn.Sigmoid()
         )
 
     def forward(self, atom_feats, bond_feats, attention_matrix_mask, labels=None):
         atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
-        mol_embeds = torch.cat([atom_outputs.mean(dim=1),atom_outputs.max(dim=1).values], dim=-1)
-        mol_embeds = self.dropout(mol_embeds)
+        mol_embeds = atom_outputs.mean(dim=1)
         logits = self.regressor(mol_embeds)
         loss1, loss2 = None, None
         if labels is not None:
@@ -697,3 +696,48 @@ class MOLAForMolculeRegression(nn.Module):
             loss2 = F.mse_loss(logits[:,1].flatten(), labels[:,1].flatten())
         loss = (loss1, loss2)
         return loss, logits
+    
+class MOLAForMoleculeRegression(nn.Module):
+    def __init__(self, mol_config, text_model_name, n_class, hf_token=None, ):
+        super(MOLAForMoleculeRegression, self).__init__()
+        self.mol_model = DeMOLTaModel(mol_config)
+        self.language_model_config = AutoConfig.from_pretrained(text_model_name)
+        if hf_token:
+            self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name, use_auth_token=hf_token, torch_dtype = "auto")
+        else:
+            self.language_model = AutoModelForCausalLM.from_pretrained(text_model_name)
+        self.freeze_language_model()
+        self.vocab_size = self.language_model.config.vocab_size
+        self.language_projection = nn.Linear(mol_config.node_hidden_dim*2, self.language_model.config.hidden_size)
+        self.regressor = nn.Sequential(
+            nn.LazyLinear(n_class),
+            nn.Sigmoid()
+        )
+
+    def forward(self, input_ids, input_attention_mask, atom_feats, bond_feats, attention_matrix_mask, labels=None):
+        atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
+        mol_embeds = torch.cat([atom_outputs.mean(dim=1).unsqueeze(1),atom_outputs.max(dim=1).values.unsqueeze(1)], dim=-1)
+        mol_embeds = self.language_projection(mol_embeds)
+        mol_attention_mask = torch.ones(
+            mol_embeds.size()[:-1], dtype=torch.long, device=mol_embeds.device
+        )
+
+        input_embeds = self.language_model.get_input_embeddings()(input_ids)
+        inputs_embeds = torch.cat([mol_embeds, input_embeds], dim=1)
+        attention_mask = torch.cat([mol_attention_mask , input_attention_mask], dim=1)
+        outputs = self.language_model(
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            output_hidden_states=True,
+        )
+        last_token_hidden_state = outputs.logits[:,-1,:]
+        logits = self.regressor(last_token_hidden_state)
+        if labels is not None:
+            loss1 = F.mse_loss(logits[:,0].flatten(), labels[:,0].flatten())
+            loss2 = F.mse_loss(logits[:,1].flatten(), labels[:,1].flatten())
+        loss = (loss1, loss2)
+        return loss, logits
+
+    def freeze_language_model(self):
+        for param in self.language_model.parameters():
+            param.requires_grad = False

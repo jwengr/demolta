@@ -10,7 +10,7 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.strategies import DeepSpeedStrategy
 from lightning.pytorch.utilities.deepspeed import convert_zero_checkpoint_to_fp32_state_dict
 
-from model.modeling_demolta import MOLLA, MOLAForMolculeRegression
+from model.modeling_demolta import MOLLA, MOLAForMoleculeRegression, DeMOLTaForMoleculeRegression
 from optim import Lion
 
 from weakref import proxy
@@ -136,7 +136,7 @@ class LitMOLA(L.LightningModule):
 class LitMOLAForRegression(L.LightningModule):
     def __init__(self, demolta_config, text_model_name, n_class):
         super().__init__()
-        self.model = MOLAForMolculeRegression(demolta_config, text_model_name, n_class)
+        self.model = MOLAForMoleculeRegression(demolta_config, text_model_name, n_class)
         self.validation_step_outputs = []
 
     def training_step(self, batch, batch_idx):
@@ -152,8 +152,8 @@ class LitMOLAForRegression(L.LightningModule):
         )
         loss, logits = outputs
         loss1, loss2 = loss
-        loss = (loss1**0.5 + loss2**0.5)/2
-        self.log("train_loss", loss*100, on_epoch=True, prog_bar=True, logger=True)
+        loss = (loss1 + loss2)/2
+        self.log("train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -181,5 +181,5 @@ class LitMOLAForRegression(L.LightningModule):
         self.validation_step_outputs.clear()
 
     def configure_optimizers(self):
-        return AdamW(self.parameters(), lr=1e-5)
+        return AdamW(self.parameters(), lr=5e-5)
 
