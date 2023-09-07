@@ -27,7 +27,8 @@ def main(
         bucket_name='',
         destination_blob_name='',
         deepspeed=False,
-        device='0'
+        device='0',
+        pretrained_demolta_path=None
     ):
 
     smiles_to_filter = pd.read_csv(test_df_path)['SMILES'].tolist()
@@ -83,7 +84,9 @@ def main(
         hf_token=hf_token,
         deepspeed=deepspeed
     )
-
+    if pretrained_demolta_path:
+        checkpoint = torch.load(pretrained_demolta_path)
+        lit_model.load_state_dict(checkpoint, strict=False)
 
     if deepspeed:
         custom_deepspeed_strategy = CustomDeepSpeedStrategy(
@@ -147,6 +150,7 @@ if __name__ == "__main__":
     parser.add_argument("--destination_blob_name", type=str)
     parser.add_argument("--deepspeed", type=lambda x: x=='True', default=False)
     parser.add_argument("--device", type=str, default=None)
+    parser.add_argument("--pretrained_demolta_path", type=str)
 
     args = parser.parse_args()
 
@@ -165,8 +169,6 @@ if __name__ == "__main__":
         bucket_name=args.bucket_name,
         destination_blob_name=args.destination_blob_name,
         deepspeed=args.deepspeed,
-        device=args.device
+        device=args.device,
+        pretrained_demolta_path=args.pretrained_demolta_path
     )
-
-# pip install deepspeed transformers lightning rdkit-pypi dgl dgllife google-cloud-storage pytorch-metric-learning tensorboard
-# python pretrain.py --batch_size=128 --max_step=400000 --text_model_name=meta-llama/Llama-2-7b-hf --pretrain_df_path=./preproc/pretrain.csv --pretrain_val_df_path=./preproc/pretrain_val.csv --demolta_size=base --test_df_path=./data/test.csv --accumulate_grad_batches=2 --deepspeed=True --device=0,1 --hf_token=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 --gcp_credentials_path=./auth/flowing-banner-391105-04efc2e014a8.json --bucket_name=jinwoo0766 --destination_blob_name=mola_checkpoint
