@@ -122,7 +122,7 @@ def main(
             max_steps=max_step,
             callbacks=[checkpoint_callback],
             accumulate_grad_batches=accumulate_grad_batches,
-            strategy='ddp_find_unused_parameters_true'
+            strategy='ddp_find_unused_parameters_true',
             gradient_clip_val=1.0,
             val_check_interval=10,
             limit_val_batches=10,
