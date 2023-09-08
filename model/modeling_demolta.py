@@ -556,9 +556,10 @@ class DeMOLTaModel(nn.Module):
     
 
 class MOLLACollateFn:
-    def __init__(self, tokenizer):
+    def __init__(self, tokenizer, finetune=False):
         self.mol_collate_fn = DeMOLTaCollateFn()
         self.tokenizer = tokenizer
+        self.finetune = finetune
 
     def __call__(self, samples):
         mols = self.mol_collate_fn([sample['mol_feats'] for sample in samples])
@@ -574,7 +575,7 @@ class MOLLACollateFn:
             'attention_mask': attention_mask,
             'labels': label_ids,
         }
-        if samples[0].get('target'):
+        if self.finetune:
             label = [sample['target'] for sample in samples]
             batch['target'] = torch.Tensor(label)
         return batch
@@ -714,7 +715,12 @@ class MOLLAForMoleculeRegression(nn.Module):
         self.vocab_size = self.language_model.config.vocab_size
         self.language_projection = nn.Linear(mol_config.node_hidden_dim*2, self.language_model.config.hidden_size)
         self.regressor = nn.Sequential(
-            nn.LazyLinear(1),
+            nn.Dropout(),
+            nn.Linear(self.language_model.config.hidden_size, self.language_model.config.hidden_size),
+            nn.LayerNorm(self.language_model.config.hidden_size),
+            nn.Tanh(),
+            nn.Dropout(),
+            nn.Linear(self.language_model.config.hidden_size, 1),
             nn.Sigmoid()
         )
 
@@ -734,7 +740,7 @@ class MOLLAForMoleculeRegression(nn.Module):
             attention_mask=attention_mask,
             output_hidden_states=True,
         )
-        last_token_hidden_state = outputs.logits[:,-1,:]
+        last_token_hidden_state = outputs.hidden_states[-1][:,-1,:]
         logits = self.regressor(last_token_hidden_state)
         
         loss = None

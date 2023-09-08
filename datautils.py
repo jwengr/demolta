@@ -114,7 +114,6 @@ class LitMOLLADataModule(L.LightningDataModule):
             else:
                 self.tokenizer.pad_token_id=2
 
-        self.featurizer = DeMOLTaFeaturizer()
         self.collate_fn = MOLLACollateFn(self.tokenizer)
 
     def setup(self, stage: str):
@@ -162,10 +161,9 @@ class LitMOLLAFineTuneDataModule(L.LightningDataModule):
             else:
                 self.tokenizer.pad_token_id=2
 
-        self.featurizer = DeMOLTaFeaturizer()
-        self.collate_fn = MOLLACollateFn(self.tokenizer)
+        self.collate_fn = MOLLACollateFn(self.tokenizer, finetune=True)
 
-        
+
     def setup(self, stage: str):
         if stage == 'fit':
             df = pd.read_csv(self.df_path)
@@ -176,7 +174,7 @@ class LitMOLLAFineTuneDataModule(L.LightningDataModule):
             self.train_dataset = MOLLAFineTuneDataset(train_df, self.query, self.column_name)
             self.val_dataset = MOLLAFineTuneDataset(val_df, self.query, self.column_name)
         elif stage == 'predict':
-            self.pred_dataset = MOLLAFineTuneDataset(pd.read_csv(self.df_path))
+            self.pred_dataset = MOLLAFineTuneDataset(pd.read_csv(self.df_path), self.query, self.column_name)
 
     def preproc_train(self, df):
         df = df.copy()
@@ -206,7 +204,6 @@ class LitDeMOLTaFineTuneDataModule(L.LightningDataModule):
         self.train_fold = train_fold
         self.splitter = splitter
 
-        self.featurizer = DeMOLTaFeaturizer()
         self.collate_fn = DeMOLTaFineTuneCollateFn()
 
     def setup(self, stage: str):
