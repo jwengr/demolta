@@ -111,8 +111,8 @@ def main(
     else:
         checkpoint_callback = SaveTrainableParamsCheckpoint(
             monitor='val_loss',
-            dirpath='./checkpoint/',
-            filename='mola-pretrain' + f'-{demolta_size}-{text_model_name.split("/")[-1]}' + '-{step}-{train_loss:.4f}-{val_loss:.2f}',
+            dirpath='./checkpoints/',
+            filename='mola-instruction' + f'-{demolta_size}-{text_model_name.split("/")[-1]}' + '-{step}-{train_loss:.4f}-{val_loss:.2f}',
             save_top_k=3,
             save_last=True,
             bucket_name=bucket_name,
