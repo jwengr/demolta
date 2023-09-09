@@ -1,5 +1,5 @@
 deepspeed==0.10.2
-transformers==4.10.0
+transformers==4.33.1
 deepchem==2.7.1
 dgl==1.1.2
 dgllife==0.3.2
