@@ -604,8 +604,17 @@ class MOLLA(nn.Module):
         self.freeze_language_model()
         self.vocab_size = self.language_model.config.vocab_size
         self.language_projection = nn.Linear(mol_config.node_hidden_dim*2, self.language_model.config.hidden_size)
+        self.regressor = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(self.language_model.config.hidden_size, self.language_model.config.hidden_size),
+            nn.LayerNorm(self.language_model.config.hidden_size),
+            nn.Tanh(),
+            nn.Dropout(),
+            nn.Linear(self.language_model.config.hidden_size, 1),
+            nn.Sigmoid()
+        )
 
-    def forward(self, input_ids, input_attention_mask, atom_feats, bond_feats, attention_matrix_mask, labels=None):
+    def forward(self, input_ids, input_attention_mask, atom_feats, bond_feats, attention_matrix_mask, labels=None, regression_target=None):
         atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
         mol_embeds = torch.cat([atom_outputs.mean(dim=1).unsqueeze(1),atom_outputs.max(dim=1).values.unsqueeze(1)], dim=-1)
         mol_embeds = self.language_projection(mol_embeds)
@@ -623,56 +632,33 @@ class MOLLA(nn.Module):
         )
 
         logits = outputs.logits
-        last_hidden_state = outputs.hidden_states[-1]
-        ref_emb = last_hidden_state[:, 0, :]
         loss = None
-        if labels is not None:
-            labels = labels.to(logits.device)
-            logits = logits[:, -labels.size(1) :, :]
-            loss_contrastive_fn = SelfSupervisedLoss(NTXentLoss(temperature=0.1), symmetric=True)
-            loss_contrastive = loss_contrastive_fn(mol_embeds.squeeze(1), ref_emb)
-            
+
+        ref_emb = outputs.hidden_states[-1][:, 0, :]
+        labels = labels.to(logits.device)
+        logits = logits[:, -labels.size(1) :, :]
+        loss_contrastive_fn = SelfSupervisedLoss(NTXentLoss(temperature=0.1), symmetric=True)
+        loss_contrastive = loss_contrastive_fn(mol_embeds.squeeze(1), ref_emb)
+        loss = loss_contrastive
+
+        if labels is not None:    
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous().to(logits.device)
             loss_language_model_loss_fn = nn.CrossEntropyLoss(reduction="mean")
             loss_language_model_loss = loss_language_model_loss_fn(shift_logits.view(-1, self.vocab_size), shift_labels.view(-1))
-            loss = loss_contrastive + loss_language_model_loss * 5.0
+            loss = loss + loss_language_model_loss * 5.0
+
+        if regression_target is not None:
+            reg_embeds = outputs.hidden_states[-1][:, -1, :]
+            reg_logits = self.regressor(reg_embeds)
+            loss_regression = F.mse_loss(reg_logits.flatten(), regression_target.flatten())
+            loss = loss + loss_regression * 25.0
+
         return loss, logits
         
     def freeze_language_model(self):
         for param in self.language_model.parameters():
             param.requires_grad = False
-
-    @torch.no_grad()
-    def generate(self, input_ids, input_attention_mask, atom_feats, bond_feats, attention_matrix_mask, **generate_kwargs):
-        atom_outputs, bond_outputs = self.mol_model(atom_feats, bond_feats, attention_matrix_mask)
-        mol_embeds = atom_outputs.mean(dim=1).unsqueeze(1)
-        mol_embeds = self.language_projection(mol_embeds)
-        mol_attention_mask = torch.ones(
-            mol_embeds.size()[:-1], dtype=torch.long, device=mol_embeds.device
-        )
-
-        batch_size = mol_embeds.size(0)
-        if input_ids is None:
-            input_ids = (
-                torch.LongTensor([[self.config.text_config.bos_token_id]])
-                .repeat(batch_size, 1)
-                .to(mol_embeds.device)
-            )
-        if attention_mask is None:
-            attention_mask = torch.ones_like(input_ids)
-
-        input_embeds = self.language_model.get_input_embeddings()(input_ids)
-        inputs_embeds = torch.cat([mol_embeds, input_embeds], dim=1)
-        attention_mask = torch.cat([mol_attention_mask , input_attention_mask], dim=1)
-
-        outputs = self.language_model.generate(
-            inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
-            **generate_kwargs,
-        )
-
-        return outputs
     
 
 class DeMOLTaForMoleculeRegression(nn.Module):

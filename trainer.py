@@ -76,7 +76,7 @@ class CustomDeepSpeedStrategy(DeepSpeedStrategy):
 
 
 class LitMOLLA(L.LightningModule):
-    def __init__(self, demolta_config, text_model_name, hf_token=None, deepspeed=False):
+    def __init__(self, demolta_config, text_model_name, hf_token=None, deepspeed=False, pretrain_regression=False):
         super().__init__()
         self.save_hyperparameters()
         self.model = MOLLA(demolta_config, text_model_name, hf_token)
@@ -95,7 +95,8 @@ class LitMOLLA(L.LightningModule):
             atom_feats=atom_feats,
             bond_feats=bond_feats,
             attention_matrix_mask=attention_matrix_mask,
-            labels=labels
+            labels=labels,
+            regression_target = batch['target'] if self.hparams.pretrain_regression else None
         )
         loss = outputs[0]
         self.log("train_loss", loss, on_step=True, on_epoch=False, prog_bar=True, logger=True)
@@ -114,7 +115,8 @@ class LitMOLLA(L.LightningModule):
             atom_feats=atom_feats,
             bond_feats=bond_feats,
             attention_matrix_mask=attention_matrix_mask,
-            labels=labels
+            labels=labels,
+            regression_target = batch['target'] if self.hparams.pretrain_regression else None
         )
         loss = outputs[0].detach().cpu()
         self.validation_step_outputs.append(loss)

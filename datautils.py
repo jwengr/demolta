@@ -66,18 +66,18 @@ class DeMOLTaFineTuneDataset(Dataset):
         return len(self.df)
 
 class MOLLAFineTuneDataset(Dataset):
-    def __init__(self, df, query, col_name):
+    def __init__(self, df, col_name):
         self.df = df
-        self.query = query
         self.col_name = col_name
         self.featurizer = DeMOLTaFeaturizer()
         
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
         smiles = row['SMILES']
+        query = row['query']
         sample = {
             'mol_feats': self.featurizer(smiles=smiles),
-            'query': self.query,
+            'query': query,
             'answer': '',
             'target': row[self.col_name]
         }
@@ -135,11 +135,10 @@ class LitMOLLADataModule(L.LightningDataModule):
 
     
 class LitMOLLAFineTuneDataModule(L.LightningDataModule):
-    def __init__(self, df_path, batch_size, query, column_name, tokenizer_name='', seed=42, k_fold=5, train_fold=0, splitter='fingerprints', hf_token='', **kwargs):
+    def __init__(self, df_path, batch_size, column_name, tokenizer_name='', seed=42, k_fold=5, train_fold=0, splitter='fingerprints', hf_token='', **kwargs):
         super().__init__()
         self.df_path = df_path
         self.batch_size = batch_size
-        self.query = query
         self.column_name = column_name
         self.tokenizer_name = tokenizer_name
         self.hf_token = hf_token
@@ -174,9 +173,9 @@ class LitMOLLAFineTuneDataModule(L.LightningDataModule):
             smiles = df['SMILES'].tolist()
             dfs = smiles_split(df, smiles, seed=self.seed, k_fold=self.k_fold, splitter=self.splitter)
             train_df, val_df = dfs[self.train_fold]
-            train_df = self.preproc_train(train_df)
-            self.train_dataset = MOLLAFineTuneDataset(train_df, self.query, self.column_name)
-            self.val_dataset = MOLLAFineTuneDataset(val_df, self.query, self.column_name)
+            # train_df = self.preproc_train(train_df)
+            self.train_dataset = MOLLAFineTuneDataset(train_df, self.column_name)
+            self.val_dataset = MOLLAFineTuneDataset(val_df, self.column_name)
         elif stage == 'predict':
             self.pred_dataset = MOLLAFineTuneDataset(pd.read_csv(self.df_path), self.query, self.column_name)
 
