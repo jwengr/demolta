@@ -120,6 +120,8 @@ class LitMOLLADataModule(L.LightningDataModule):
         if stage == 'fit':
             train_df = pd.read_csv(self.train_df_path).sort_values(by='smiles', key=lambda x: -x.str.len()).reset_index(drop=True)
             train_df = train_df.iloc[int(len(train_df)*0.05):int(len(train_df)*0.95), :]
+            train_df = train_df.sort_values(by='query', key=lambda x: -x.str.len()).reset_index(drop=True)
+            train_df = train_df.iloc[int(len(train_df)*0.05):int(len(train_df)*0.95), :]
             train_df.iloc[1:, :] = train_df.iloc[1:, :].sample(frac=1).reset_index(drop=True).values
             self.train_dataset = MOLLADataset(train_df, self.ignore_smiles)
             val_df = pd.read_csv(self.val_df_path)
